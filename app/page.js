@@ -90,7 +90,6 @@ if (isSetting) {
     const suggestions = {
       doing: ["横になって休んでいるよ", "薬を飲んで安静にしてる", "暗い部屋で寝てる", "食欲ないの", "少し落ち着いてきた"],
       requests: [
-        { cat: "💓 気持ち・メッセージ", items: ["SOS！たすけて", "しんどいよ〜泣", "甘えたい気分", "パワーをください", "いつもありがとう"] },
         { cat: "🧼 家事・身の回り", items: ["洗い物をお願いしたい", "洗濯物を取り込んでほしい", "ゴミ出しをお願い", "お風呂を沸かしてほしい"] },
         { cat: "🍱 食事・買い出し", items: ["消化にいいものを作ってほしい", "コンビニでゼリー飲料買ってきて", "温かい飲み物を淹れてほしい", "アイス買ってきて"] },
         { cat: "🌡️ 環境・ケア", items: ["部屋を暗くしてほしい", "静かにしてほしい", "湯たんぽ（カイロ）を用意してほしい", "腰や肩をさすってほしい"] },
@@ -113,21 +112,17 @@ if (isSetting) {
     };
 
     const generateCard = (text, type) => {
-      // 実際にはここでCanvasなどを使って画像データ(DataURL)を生成します
-      // 今回はデモとして、アラートで生成した「つもり」にします。
       const cardCanvas = document.createElement("canvas");
       cardCanvas.width = 400;
       cardCanvas.height = 250;
       const ctx = cardCanvas.getContext("2d");
 
-      // 背景
       ctx.fillStyle = colors.bg;
       ctx.fillRect(0, 0, 400, 250);
       ctx.strokeStyle = colors.main;
       ctx.lineWidth = 10;
       ctx.strokeRect(10, 10, 380, 230);
 
-      // テキスト
       ctx.fillStyle = colors.text;
       ctx.font = "bold 20px sans-serif";
       ctx.textAlign = "center";
@@ -137,14 +132,11 @@ if (isSetting) {
         ctx.fillText(line, 200, 125 + (i - (lines.length - 1) / 2) * 30);
       });
 
-      // タイプ（絵文字など）
       ctx.font = "50px sans-serif";
       const emoji = type === "doing" ? "👟" : type === "requests" ? "🍼" : "🚫";
       ctx.fillText(emoji, 200, 60);
 
       const cardImageUrl = cardCanvas.toDataURL("image/png");
-      
-      // 生成した画像を別ウィンドウで開く（保存できるように）
       const newWindow = window.open();
       newWindow.document.write(`<img src="${cardImageUrl}" alt="寄り添いカード" style="border: 10px solid ${colors.main}; border-radius: 20px; box-shadow: 0 10px 20px ${colors.shadow};" />`);
       newWindow.document.write(`<p style="font-family: sans-serif; color: ${colors.text}; text-align: center;">この画像を保存して、パートナーに送ってね！</p>`);
@@ -173,9 +165,9 @@ if (isSetting) {
           </div>
 
           {[
-            { label: "👟 いま、やっていること", field: "doing" },
-            { label: "🍼 お願いしたいこと", field: "requests" },
-            { label: "🚫 遠慮してほしいこと", field: "notToDo" }
+            { label: "👟 いま、やっていること", field: "doing", icon: "👟" },
+            { label: "🍼 お願いしたいこと", field: "requests", icon: "🍼" },
+            { label: "🚫 遠慮してほしいこと", field: "notToDo", icon: "🚫" }
           ].map((item) => (
             <div key={item.field} style={{ marginBottom: "25px" }}>
               <label style={{fontSize:"13px", fontWeight:"bold", display:"block", marginBottom:"8px"}}>{item.label}</label>
@@ -207,67 +199,8 @@ if (isSetting) {
                 style={{width:"100%", height:"50px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"13px"}} 
                 placeholder="または自由に記述..." 
               />
-              {/* 一言カード生成ボタン */}
               {config.levels[currentLevelTab][item.field] && (
                 <button 
                   onClick={() => generateCard(config.levels[currentLevelTab][item.field], item.field)}
-                  style={{ marginTop: "10px", padding: "8px 15px", background: "white", color: colors.main, border: `2px solid ${colors.main}`, borderRadius: "20px", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}
-                >
-                  {item.icon} 一言カードを作成
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-        
-        <button onClick={saveSettings} style={{ width: "100%", padding: "18px", background: colors.main, color: "white", borderRadius: "20px", border: "none", fontWeight: "bold", marginTop: "25px", fontSize: "16px", boxShadow: `0 10px 20px ${colors.shadow}` }}>設定を保存する</button>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ padding: "30px 20px", maxWidth: 450, margin: "0 auto", backgroundColor: colors.bg, minHeight: "100vh", fontFamily: "sans-serif", color: colors.text }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
-        <div>
-          <h1 style={{ fontSize: "24px", fontWeight: "800", color: colors.main, margin: 0 }}>Yorisoi 🕊️</h1>
-          <p style={{ fontSize: "11px", color: colors.subText }}>大切な人に、今のあなたを届ける</p>
-        </div>
-        <button onClick={() => setIsSetting(true)} style={{ background: "white", border: "none", fontSize: "20px", width:"45px", height:"45px", borderRadius:"50%", boxShadow: `0 5px 15px ${colors.shadow}` }}>⚙️</button>
-      </div>
-
-      <section style={{ marginBottom: 35 }}>
-        <h3 style={{ fontSize: "16px", marginBottom: "15px" }}>今の症状</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-          {config.symptoms.map(s => (
-            <button key={s} onClick={() => handleSymptomClick(s)} 
-              style={{ padding: "12px 5px", borderRadius: "15px", border: "none", background: selectedSymptoms.includes(s) ? colors.main : colors.card, color: selectedSymptoms.includes(s) ? "white" : colors.text, boxShadow: `0 4px 10px ${colors.shadow}`, fontWeight: "600", fontSize:"12px" }}>
-              {s}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section style={{ background: colors.card, padding: "25px", borderRadius: "30px", boxShadow: `0 15px 35px ${colors.shadow}`, textAlign:"center" }}>
-        <h3 style={{ fontSize: "16px", marginBottom:"20px" }}>しんどさレベル</h3>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "25px" }}>
-          {[0, 1, 2, 3, 4, 5].map(n => (
-            <button key={n} onClick={() => handleLevelChange(n)} style={{ width: "42px", height: "42px", borderRadius: "50%", border: "none", background: level === n ? colors.main : colors.bg, color: level === n ? "white" : colors.main, fontWeight: "800", fontSize:"16px", transition:"0.2s" }}>
-              {n}
-            </button>
-          ))}
-        </div>
-        
-        <div style={{ background: colors.bg, padding: "25px", borderRadius: "25px", textAlign: "center", marginBottom: "25px" }}>
-          <div style={{ fontSize: "50px", marginBottom:"10px" }}>{levelGuides[level].emoji}</div>
-          <div style={{ fontWeight: "800", fontSize: "18px", color: colors.text }}>{levelGuides[level].status}</div>
-        </div>
-
-        <div style={{ textAlign: "left", fontSize: "14px", borderTop: `1px dashed ${colors.main}`, paddingTop: "20px" }}>
-          <div style={{marginBottom:"15px"}}><strong>👟 やっていること</strong><br/><span style={{color:colors.subText}}>{config.levels[level].doing || "（未設定）"}</span></div>
-          <div style={{marginBottom:"15px"}}><strong>🍼 お願いしたいこと</strong><br/><span style={{color:colors.subText}}>{config.levels[level].requests || "（未設定）"}</span></div>
-          <div><strong>🚫 遠慮してほしいこと</strong><br/><span style={{color:colors.subText}}>{config.levels[level].notToDo || "（未設定）"}</span></div>
-        </div>
-      </section>
-    </div>
-  );
-}
+                  style={{ marginTop: "10px", padding: "8px 15px", background: "white", color: colors.main, border: `2px solid ${colors.
+                                                                                                                                 
