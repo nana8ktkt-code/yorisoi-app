@@ -46,9 +46,15 @@ export default function Home() {
     fetchSettings(id);
   }, []);
 
-  const fetchSettings = async (uid) => {
+ const fetchSettings = async (uid) => {
     const { data } = await supabase.from('user_settings').select('level_config').eq('user_id', uid).single();
-    if (data && data.level_config) setConfig(data.level_config);
+    if (data && data.level_config) {
+      // 保存されているデータに、新しい症状リストを強制的に上書きして合体させる
+      setConfig({
+        ...data.level_config,
+        symptoms: ["つわり", "生理痛", "PMS", "心の浮き沈み", "頭痛", "だるい", "喉が痛い", "腰痛", "腹痛"]
+      });
+    }
   };
 
   const saveSettings = async () => {
