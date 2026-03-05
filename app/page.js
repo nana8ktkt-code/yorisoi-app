@@ -7,26 +7,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 export default function Home() {
-  const [selectedSymptoms, setSelectedSymptoms] = useState([]);
-  const [level, setLevel] = useState(0);
   const [userId, setUserId] = useState(null);
+  const [level, setLevel] = useState(0);
+  const [selectedSymptoms, setSelectedSymptoms] = useState([]);
+  const [isSetting, setIsSetting] = useState(false);
+  
+  // 設定可能なリスト
+  const [symptomsList, setSymptomsList] = useState(["つわり", "生理痛", "PMS", "頭痛"]);
+  const [requestsList, setRequestsList] = useState(["おかゆを作ってほしい", "静かにしてほしい"]);
 
-  const colors = {
-    bg: "#F4F9FF", card: "#FFFFFF", main: "#8EC6E8",
-    text: "#334455", subText: "#8899AA", shadow: "rgba(142, 198, 232, 0.15)"
-  };
-
-  // ★以前の症状リストを復活
-  const symptomsList = ["つわり", "生理痛", "PMS", "心の浮き沈み", "頭痛", "だるい", "喉が痛い", "腰痛", "腹痛"];
-
-  const levelGuides = {
-    0: { status: "落ち着いています", emoji: "🌿" },
-    1: { status: "少しだるい", emoji: "🙂" },
-    2: { status: "しんどい", emoji: "😟" },
-    3: { status: "話すのもしんどい", emoji: "😣" },
-    4: { status: "かなりしんどい", emoji: "😫" },
-    5: { status: "とにかく寝たい", emoji: "🚫" }
-  };
+  const colors = { bg: "#F4F9FF", card: "#FFFFFF", main: "#8EC6E8", text: "#334455", subText: "#8899AA" };
 
   useEffect(() => {
     let id = localStorage.getItem("yorisoi_user_id");
@@ -35,85 +25,82 @@ export default function Home() {
       localStorage.setItem("yorisoi_user_id", id);
     }
     setUserId(id);
+    fetchSettings(id);
   }, []);
 
-  const saveStatus = async (newLevel, newSymptoms) => {
-    if (!userId) return;
-    await supabase.from('health_status').upsert({ 
+  // 設定を読み込む
+  const fetchSettings = async (uid) => {
+    const { data } = await supabase.from('user_settings').select('*').eq('user_id', uid).single();
+    if (data) {
+      if (data.symptoms_list) setSymptomsList(data.symptoms_list);
+      if (data.requests_list) setRequestsList(data.requests_list);
+    }
+  };
+
+  // 設定を保存する
+  const saveSettings = async () => {
+    await supabase.from('user_settings').upsert({
       user_id: userId,
-      level: newLevel,
-      symptoms: newSymptoms.join("、"),
-      emoji: levelGuides[newLevel].emoji
+      symptoms_list: symptomsList,
+      requests_list: requestsList
+    }, { onConflict: 'user_id' });
+    setIsSetting(false);
+  };
+
+  const saveStatus = async (l, s) => {
+    await supabase.from('health_status').upsert({
+      user_id: userId, level: l, symptoms: s.join("、"), emoji: "🌡️" 
     }, { onConflict: 'user_id' });
   };
 
-  const handleLevelChange = (n) => {
-    setLevel(n);
-    saveStatus(n, selectedSymptoms);
-  };
-
-  const handleSymptomClick = (s) => {
-    const next = selectedSymptoms.includes(s) ? selectedSymptoms.filter(i => i !== s) : [...selectedSymptoms, s];
-    setSelectedSymptoms(next);
-    saveStatus(level, next);
-  };
-
-  const generateShareUrl = () => {
-    const url = `${window.location.origin}/partner?id=${userId}`;
-    navigator.clipboard.writeText(url);
-    alert("パートナー専用URLをコピーしました！");
-  };
+  if (isSetting) {
+    return (
+      <div style={{ padding: "30px", backgroundColor: colors.bg, minHeight: "100vh" }}>
+        <h2>⚙️ 設定</h2>
+        <label>症状リスト（カンマ区切り）</label>
+        <textarea 
+          value={symptomsList.join(",")} 
+          onChange={(e) => setSymptomsList(e.target.value.split(","))}
+          style={{ width: "100%", height: "100px", marginBottom: "20px" }}
+        />
+        <label>おねがいリスト（カンマ区切り）</label>
+        <textarea 
+          value={requestsList.join(",")} 
+          onChange={(e) => setRequestsList(e.target.value.split(","))}
+          style={{ width: "100%", height: "100px", marginBottom: "20px" }}
+        />
+        <button onClick={saveSettings} style={{ width: "100%", padding: "15px", background: colors.main, color: "white", borderRadius: "10px", border: "none" }}>設定を保存</button>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: "30px 20px", maxWidth: 450, margin: "0 auto", backgroundColor: colors.bg, minHeight: "100vh", fontFamily: "sans-serif", color: colors.text }}>
-      <header style={{ marginBottom: 30 }}>
-        <h1 style={{ fontSize: "24px", fontWeight: "800", color: colors.main, margin: 0 }}>Yorisoi 🕊️</h1>
-        <p style={{ fontSize: "11px", color: colors.subText }}>大切な人に、今のあなたを届ける</p>
-      </header>
+    <div style={{ padding: "30px 20px", maxWidth: 450, margin: "0 auto", backgroundColor: colors.bg, minHeight: "100vh" }}>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <h1 style={{ color: colors.main }}>Yorisoi 🕊️</h1>
+        <button onClick={() => setIsSetting(true)} style={{ background: "none", border: "none", fontSize: "24px" }}>⚙️</button>
+      </div>
 
-      <section style={{ marginBottom: 35 }}>
-        <h3 style={{ fontSize: "16px", marginBottom: "15px" }}>今の症状</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
-          {symptomsList.map(s => {
-            const isSelected = selectedSymptoms.includes(s);
-            return (
-              <button key={s} onClick={() => handleSymptomClick(s)} 
-                style={{ padding: "12px", borderRadius: "15px", border: "none", background: isSelected ? colors.main : colors.card, color: isSelected ? "white" : colors.text, boxShadow: `0 4px 10px ${colors.shadow}`, fontWeight: "600" }}>
-                {s}
-              </button>
-            );
-          })}
+      <section style={{ marginBottom: "30px" }}>
+        <h3>今の症状</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+          {symptomsList.map(s => (
+            <button key={s} onClick={() => {
+              const next = selectedSymptoms.includes(s) ? selectedSymptoms.filter(i => i !== s) : [...selectedSymptoms, s];
+              setSelectedSymptoms(next);
+              saveStatus(level, next);
+            }} style={{ padding: "10px", background: selectedSymptoms.includes(s) ? colors.main : "white", border: "none", borderRadius: "10px" }}>{s}</button>
+          ))}
         </div>
       </section>
 
-      <section style={{ background: colors.card, padding: "25px", borderRadius: "30px", boxShadow: `0 15px 35px ${colors.shadow}` }}>
-        <h3 style={{ textAlign: "center", fontSize: "16px" }}>しんどさレベル</h3>
-        <div style={{ display: "flex", justifyContent: "space-between", margin: "20px 0" }}>
-          {[0, 1, 2, 3, 4, 5].map(n => (
-            <button key={n} onClick={() => handleLevelChange(n)} style={{ width: "40px", height: "40px", borderRadius: "50%", border: "none", background: level === n ? colors.main : colors.bg, color: level === n ? "white" : colors.main, fontWeight: "800" }}>
-              {n}
-            </button>
-          ))}
+      <section style={{ background: "white", padding: "20px", borderRadius: "20px" }}>
+        <h3>しんどさレベル: {level}</h3>
+        <input type="range" min="0" max="5" value={level} onChange={(e) => { setLevel(e.target.value); saveStatus(e.target.value, selectedSymptoms); }} style={{ width: "100%" }} />
+        <div style={{ marginTop: "20px" }}>
+          <h4>🍼 おねがい</h4>
+          {requestsList.map(r => <div key={r}>・ {r}</div>)}
         </div>
-        
-        <div style={{ background: colors.bg, padding: "20px", borderRadius: "20px", textAlign: "center", marginBottom: "20px" }}>
-          <div style={{ fontSize: "40px" }}>{levelGuides[level].emoji}</div>
-          <div style={{ fontWeight: "800" }}>{levelGuides[level].status}</div>
-        </div>
-
-        {/* ★お願いリスト（ToDo）の表示 */}
-        <div style={{ marginTop: "20px", padding: "15px", borderTop: `1px dashed ${colors.main}` }}>
-          <h4 style={{ fontSize: "14px", color: colors.main }}>🍼 おねがい（ToDo）</h4>
-          <ul style={{ paddingLeft: "20px", fontSize: "13px", color: colors.text }}>
-            <li>おかゆを作ってほしい</li>
-            <li>静かにしてほしい</li>
-            <li>背中をさすってほしい</li>
-          </ul>
-        </div>
-
-        <button onClick={generateShareUrl} style={{ width: "100%", padding: "15px", background: colors.main, color: "white", borderRadius: "20px", border: "none", fontWeight: "800", marginTop: "15px" }}>
-          🔗 パートナー専用URLをコピーする
-        </button>
       </section>
     </div>
   );
