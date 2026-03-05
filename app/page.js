@@ -9,11 +9,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 export default function Home() {
   const [userId, setUserId] = useState(null);
   const [level, setLevel] = useState(0);
+  const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [isSetting, setIsSetting] = useState(false);
   const [currentLevelTab, setCurrentLevelTab] = useState(0);
   
   const [config, setConfig] = useState({
-    symptoms: ["つわり", "生理痛", "頭痛"],
+    symptoms: ["つわり", "生理痛", "PMS", "心の浮き沈み", "頭痛", "だるい", "喉が痛い", "腰痛", "腹痛"],
     levels: {
       0: { doing: "", requests: "", notToDo: "" },
       1: { doing: "", requests: "", notToDo: "" },
@@ -24,7 +25,16 @@ export default function Home() {
     }
   });
 
-  const colors = { bg: "#F4F9FF", card: "#FFFFFF", main: "#8EC6E8", text: "#334455" };
+  const levelGuides = {
+    0: { status: "落ち着いています", emoji: "🌿" },
+    1: { status: "少しだるい", emoji: "🙂" },
+    2: { status: "しんどい", emoji: "😟" },
+    3: { status: "話すのもしんどい", emoji: "😣" },
+    4: { status: "かなりしんどい", emoji: "😫" },
+    5: { status: "とにかく寝たい", emoji: "🚫" }
+  };
+
+  const colors = { bg: "#F4F9FF", card: "#FFFFFF", main: "#8EC6E8", text: "#334455", subText: "#8899AA", shadow: "rgba(142, 198, 232, 0.15)" };
 
   useEffect(() => {
     let id = localStorage.getItem("yorisoi_user_id");
@@ -46,52 +56,101 @@ export default function Home() {
     setIsSetting(false);
   };
 
+  const saveStatus = async (l, s) => {
+    if (!userId) return;
+    await supabase.from('health_status').upsert({
+      user_id: userId,
+      level: l,
+      symptoms: s.join("、"),
+      emoji: levelGuides[l].emoji,
+      doing: config.levels[l].doing,
+      requests: config.levels[l].requests,
+      not_to_do: config.levels[l].notToDo
+    }, { onConflict: 'user_id' });
+  };
+
+  const handleLevelChange = (n) => {
+    setLevel(n);
+    saveStatus(n, selectedSymptoms);
+  };
+
+  const handleSymptomClick = (s) => {
+    const next = selectedSymptoms.includes(s) ? selectedSymptoms.filter(i => i !== s) : [...selectedSymptoms, s];
+    setSelectedSymptoms(next);
+    saveStatus(level, next);
+  };
+
   if (isSetting) {
     return (
-      <div style={{ padding: "20px", backgroundColor: colors.bg, minHeight: "100vh" }}>
-        <button onClick={() => setIsSetting(false)} style={{marginBottom:"10px"}}>◀ 戻る</button>
-        <h2 style={{fontSize:"18px"}}>⚙️ レベル別の詳細設定</h2>
+      <div style={{ padding: "20px", backgroundColor: colors.bg, minHeight: "100vh", color: colors.text }}>
+        <button onClick={() => setIsSetting(false)} style={{marginBottom:"10px", border:"none", background:"none", fontSize:"16px"}}>◀ 戻る</button>
+        <h2 style={{fontSize:"20px", marginBottom:"20px"}}>⚙️ レベル別の詳細設定</h2>
         
-        <div style={{ display: "flex", gap: "5px", marginBottom: "15px", overflowX: "auto", padding: "5px 0" }}>
+        <div style={{ display: "flex", gap: "8px", marginBottom: "15px", overflowX: "auto", padding: "5px 0" }}>
           {[0, 1, 2, 3, 4, 5].map(l => (
-            <button key={l} onClick={() => setCurrentLevelTab(l)} style={{ padding: "8px 12px", borderRadius: "10px", border: "none", background: currentLevelTab === l ? colors.main : "white", color: currentLevelTab === l ? "white" : colors.text }}>Lv{l}</button>
+            <button key={l} onClick={() => setCurrentLevelTab(l)} style={{ padding: "10px 15px", borderRadius: "12px", border: "none", background: currentLevelTab === l ? colors.main : "white", color: currentLevelTab === l ? "white" : colors.text, fontWeight:"bold", boxShadow: `0 4px 10px ${colors.shadow}` }}>Lv{l}</button>
           ))}
         </div>
 
-        <div style={{ background: "white", padding: "20px", borderRadius: "20px" }}>
-          <h4 style={{marginTop:0}}>レベル {currentLevelTab} の設定</h4>
-          <p style={{fontSize:"12px", color:"#888"}}>そのレベルになったとき、パートナーに表示される内容です</p>
+        <div style={{ background: "white", padding: "20px", borderRadius: "25px", boxShadow: `0 10px 30px ${colors.shadow}` }}>
+          <h4 style={{marginTop:0, color:colors.main}}>レベル {currentLevelTab} のときの設定</h4>
           
-          <label style={{fontSize:"13px"}}>👟 いま、やっていること</label>
-          <textarea value={config.levels[currentLevelTab].doing} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], doing: e.target.value}}})} style={{width:"100%", height:"60px", marginBottom:"15px", borderRadius:"10px", padding:"10px", border:"1px solid #ddd"}} placeholder="例：横になって休んでいるよ" />
+          <label style={{fontSize:"13px", fontWeight:"bold"}}>👟 いま、やっていること</label>
+          <textarea value={config.levels[currentLevelTab].doing} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], doing: e.target.value}}})} style={{width:"100%", height:"60px", marginBottom:"15px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"14px"}} placeholder="例：横になって休んでいるよ" />
 
-          <label style={{fontSize:"13px"}}>🍼 お願いしたいこと</label>
-          <textarea value={config.levels[currentLevelTab].requests} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], requests: e.target.value}}})} style={{width:"100%", height:"60px", marginBottom:"15px", borderRadius:"10px", padding:"10px", border:"1px solid #ddd"}} placeholder="例：温かい飲み物をいれてほしい" />
+          <label style={{fontSize:"13px", fontWeight:"bold"}}>🍼 お願いしたいこと</label>
+          <textarea value={config.levels[currentLevelTab].requests} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], requests: e.target.value}}})} style={{width:"100%", height:"60px", marginBottom:"15px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"14px"}} placeholder="例：温かい飲み物をいれてほしい" />
 
-          <label style={{fontSize:"13px"}}>🚫 してほしくないこと</label>
-          <textarea value={config.levels[currentLevelTab].notToDo} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], notToDo: e.target.value}}})} style={{width:"100%", height:"60px", marginBottom:"15px", borderRadius:"10px", padding:"10px", border:"1px solid #ddd"}} placeholder="例：今は話しかけないでほしい" />
+          <label style={{fontSize:"13px", fontWeight:"bold"}}>🚫 遠慮してほしいこと</label>
+          <textarea value={config.levels[currentLevelTab].notToDo} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], notToDo: e.target.value}}})} style={{width:"100%", height:"60px", marginBottom:"15px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"14px"}} placeholder="例：今は話しかけないでほしい" />
         </div>
         
-        <button onClick={saveSettings} style={{ width: "100%", padding: "15px", background: colors.main, color: "white", borderRadius: "20px", border: "none", fontWeight: "bold", marginTop: "20px" }}>設定を保存する</button>
+        <button onClick={saveSettings} style={{ width: "100%", padding: "18px", background: colors.main, color: "white", borderRadius: "20px", border: "none", fontWeight: "bold", marginTop: "25px", fontSize: "16px", boxShadow: `0 10px 20px ${colors.shadow}` }}>設定を保存する</button>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: "20px", maxWidth: 450, margin: "0 auto", backgroundColor: colors.bg, minHeight: "100vh" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 style={{ color: colors.main, fontSize: "24px" }}>Yorisoi 🕊️</h1>
-        <button onClick={() => setIsSetting(true)} style={{ background: "none", border: "none", fontSize: "24px" }}>⚙️</button>
+    <div style={{ padding: "30px 20px", maxWidth: 450, margin: "0 auto", backgroundColor: colors.bg, minHeight: "100vh", fontFamily: "sans-serif", color: colors.text }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+        <div>
+          <h1 style={{ fontSize: "24px", fontWeight: "800", color: colors.main, margin: 0 }}>Yorisoi 🕊️</h1>
+          <p style={{ fontSize: "11px", color: colors.subText }}>大切な人に、今のあなたを届ける</p>
+        </div>
+        <button onClick={() => setIsSetting(true)} style={{ background: "white", border: "none", fontSize: "20px", width:"45px", height:"45px", borderRadius:"50%", boxShadow: `0 5px 15px ${colors.shadow}` }}>⚙️</button>
       </div>
 
-      <section style={{ background: "white", padding: "30px", borderRadius: "30px", textAlign: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-        <h3 style={{fontSize:"16px", color:colors.text, marginBottom:"20px"}}>今のしんどさ：レベル {level}</h3>
-        <input type="range" min="0" max="5" value={level} onChange={(e) => setLevel(e.target.value)} style={{ width: "100%", marginBottom: "30px" }} />
+      <section style={{ marginBottom: 35 }}>
+        <h3 style={{ fontSize: "16px", marginBottom: "15px" }}>今の症状</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+          {config.symptoms.map(s => (
+            <button key={s} onClick={() => handleSymptomClick(s)} 
+              style={{ padding: "12px 5px", borderRadius: "15px", border: "none", background: selectedSymptoms.includes(s) ? colors.main : colors.card, color: selectedSymptoms.includes(s) ? "white" : colors.text, boxShadow: `0 4px 10px ${colors.shadow}`, fontWeight: "600", fontSize:"12px" }}>
+              {s}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ background: colors.card, padding: "25px", borderRadius: "30px", boxShadow: `0 15px 35px ${colors.shadow}`, textAlign:"center" }}>
+        <h3 style={{ fontSize: "16px", marginBottom:"20px" }}>しんどさレベル</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "25px" }}>
+          {[0, 1, 2, 3, 4, 5].map(n => (
+            <button key={n} onClick={() => handleLevelChange(n)} style={{ width: "42px", height: "42px", borderRadius: "50%", border: "none", background: level === n ? colors.main : colors.bg, color: level === n ? "white" : colors.main, fontWeight: "800", fontSize:"16px", transition:"0.2s" }}>
+              {n}
+            </button>
+          ))}
+        </div>
         
-        <div style={{ textAlign: "left", background: colors.bg, padding: "20px", borderRadius: "20px" }}>
-          <div style={{marginBottom:"15px"}}><strong>👟 やっていること</strong><br/><span style={{fontSize:"14px"}}>{config.levels[level].doing || "（設定なし）"}</span></div>
-          <div style={{marginBottom:"15px"}}><strong>🍼 お願いしたいこと</strong><br/><span style={{fontSize:"14px"}}>{config.levels[level].requests || "（設定なし）"}</span></div>
-          <div><strong>🚫 してほしくないこと</strong><br/><span style={{fontSize:"14px"}}>{config.levels[level].notToDo || "（設定なし）"}</span></div>
+        <div style={{ background: colors.bg, padding: "25px", borderRadius: "25px", textAlign: "center", marginBottom: "25px" }}>
+          <div style={{ fontSize: "50px", marginBottom:"10px" }}>{levelGuides[level].emoji}</div>
+          <div style={{ fontWeight: "800", fontSize:"18px", color:colors.text }}>{levelGuides[level].status}</div>
+        </div>
+
+        <div style={{ textAlign: "left", fontSize: "14px", borderTop: `1px dashed ${colors.main}`, paddingTop: "20px" }}>
+          <div style={{marginBottom:"15px"}}><strong>👟 やっていること</strong><br/><span style={{color:colors.subText}}>{config.levels[level].doing || "（設定なし）"}</span></div>
+          <div style={{marginBottom:"15px"}}><strong>🍼 お願いしたいこと</strong><br/><span style={{color:colors.subText}}>{config.levels[level].requests || "（設定なし）"}</span></div>
+          <div><strong>🚫 遠慮してほしいこと</strong><br/><span style={{color:colors.subText}}>{config.levels[level].notToDo || "（設定なし）"}</span></div>
         </div>
       </section>
     </div>
