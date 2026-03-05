@@ -90,6 +90,7 @@ if (isSetting) {
     const suggestions = {
       doing: ["横になって休んでいるよ", "薬を飲んで安静にしてる", "暗い部屋で寝てる", "食欲ないの", "少し落ち着いてきた"],
       requests: [
+        { cat: "💓 気持ち・メッセージ", items: ["SOS！たすけて", "しんどいよ〜泣", "甘えたい気分", "パワーをください", "いつもありがとう"] },
         { cat: "🧼 家事・身の回り", items: ["洗い物をお願いしたい", "洗濯物を取り込んでほしい", "ゴミ出しをお願い", "お風呂を沸かしてほしい"] },
         { cat: "🍱 食事・買い出し", items: ["消化にいいものを作ってほしい", "コンビニでゼリー飲料買ってきて", "温かい飲み物を淹れてほしい", "アイス買ってきて"] },
         { cat: "🌡️ 環境・ケア", items: ["部屋を暗くしてほしい", "静かにしてほしい", "湯たんぽ（カイロ）を用意してほしい", "腰や肩をさすってほしい"] },
@@ -125,7 +126,6 @@ if (isSetting) {
         <div style={{ background: "white", padding: "20px", borderRadius: "25px", boxShadow: `0 10px 30px ${colors.shadow}` }}>
           <h4 style={{marginTop:0, color:colors.main, marginBottom:"20px"}}>レベル {currentLevelTab} の設定</h4>
           
-          {/* 症状イメージプルダウン */}
           <div style={{ marginBottom: "25px", padding: "15px", background: colors.bg, borderRadius: "18px", border: `1px solid ${colors.shadow}` }}>
             <label style={{ fontSize: "12px", fontWeight: "bold", display: "block", marginBottom: "8px", color: colors.main }}>🌡️ 症状をイメージする</label>
             <select style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid #ddd", fontSize: "14px", backgroundColor: "white" }}>
@@ -134,7 +134,6 @@ if (isSetting) {
             </select>
           </div>
 
-          {/* 各入力項目 */}
           {[
             { label: "👟 いま、やっていること", field: "doing" },
             { label: "🍼 お願いしたいこと", field: "requests" },
@@ -145,7 +144,6 @@ if (isSetting) {
               
               <div style={{ background: colors.bg, padding: "10px", borderRadius: "15px", marginBottom: "10px" }}>
                 {item.field === "requests" ? (
-                  // お願いしたいこと（カテゴリー別表示）
                   suggestions[item.field].map(catGroup => (
                     <div key={catGroup.cat} style={{ marginBottom: "10px" }}>
                       <div style={{ fontSize: "10px", color: colors.main, fontWeight: "bold", marginBottom: "5px" }}>{catGroup.cat}</div>
@@ -157,7 +155,6 @@ if (isSetting) {
                     </div>
                   ))
                 ) : (
-                  // その他（通常のチップス表示）
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
                     {suggestions[item.field].map(sug => (
                       <button key={sug} onClick={() => toggleSuggestion(item.field, sug)} style={{ fontSize: "11px", padding: "5px 10px", borderRadius: "20px", border: "1px solid", borderColor: config.levels[currentLevelTab][item.field]?.includes(sug) ? colors.main : "#ddd", background: config.levels[currentLevelTab][item.field]?.includes(sug) ? colors.main : "white", color: config.levels[currentLevelTab][item.field]?.includes(sug) ? "white" : colors.subText }}>{sug}</button>
