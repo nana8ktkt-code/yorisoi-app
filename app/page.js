@@ -86,22 +86,23 @@ export default function Home() {
     saveStatus(level, next);
   };
 
-  if (isSetting) {
+if (isSetting) {
     return (
       <div style={{ padding: "20px", backgroundColor: colors.bg, minHeight: "100vh", color: colors.text }}>
         <button onClick={() => setIsSetting(false)} style={{marginBottom:"10px", border:"none", background:"none", fontSize:"16px"}}>◀ 戻る</button>
         <h2 style={{fontSize:"20px", marginBottom:"20px"}}>⚙️ レベル別の詳細設定</h2>
         
+        {/* レベル選択タブ */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "15px", overflowX: "auto", padding: "5px 0" }}>
           {[0, 1, 2, 3, 4, 5].map(l => (
             <button key={l} onClick={() => setCurrentLevelTab(l)} style={{ padding: "10px 15px", borderRadius: "12px", border: "none", background: currentLevelTab === l ? colors.main : "white", color: currentLevelTab === l ? "white" : colors.text, fontWeight:"bold", boxShadow: `0 4px 10px ${colors.shadow}` }}>Lv{l}</button>
           ))}
         </div>
 
-<div style={{ background: "white", padding: "20px", borderRadius: "25px", boxShadow: `0 10px 30px ${colors.shadow}` }}>
+        <div style={{ background: "white", padding: "20px", borderRadius: "25px", boxShadow: `0 10px 30px ${colors.shadow}` }}>
           <h4 style={{marginTop:0, color:colors.main, marginBottom:"20px"}}>レベル {currentLevelTab} の設定をつくる</h4>
           
-          {/* ① まず症状を選んで、その時の自分を想像する */}
+          {/* ① まず症状を選んで、その時の自分を想像する（これを一番上にしました！） */}
           <div style={{ marginBottom: "25px", padding: "15px", background: colors.bg, borderRadius: "18px", border: `1px solid ${colors.shadow}` }}>
             <label style={{ fontSize: "12px", fontWeight: "bold", display: "block", marginBottom: "8px", color: colors.main }}>
               🌡️ どの症状のときの設定ですか？（確認）
@@ -119,7 +120,7 @@ export default function Home() {
 
           <hr style={{ border: "none", borderTop: "1px dashed #eee", marginBottom: "20px" }} />
 
-          {/* ② イメージができたら、具体的なメッセージを書く */}
+          {/* ② 具体的なメッセージを書く */}
           <div style={{ marginBottom: "15px" }}>
             <label style={{fontSize:"13px", fontWeight:"bold", display:"block", marginBottom:"5px"}}>👟 いま、やっていること</label>
             <textarea value={config.levels[currentLevelTab].doing} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], doing: e.target.value}}})} style={{width:"100%", height:"60px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"14px"}} placeholder="例：横になって休んでいるよ" />
@@ -132,7 +133,7 @@ export default function Home() {
 
           <div style={{ marginBottom: "10px" }}>
             <label style={{fontSize:"13px", fontWeight:"bold", display:"block", marginBottom:"5px"}}>🚫 遠慮してほしいこと</label>
-            <textarea value={config.levels[currentLevelTab].notToDo} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], notToDo: e.target.value}}})} style={{width:"100%", height:"60px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"14px"}} placeholder="例：今は話しかけないでそってしておいて" />
+            <textarea value={config.levels[currentLevelTab].notToDo} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], notToDo: e.target.value}}})} style={{width:"100%", height:"60px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"14px"}} placeholder="例：今は話しかけないでそっとしておいて" />
           </div>
         </div>
         
@@ -141,6 +142,7 @@ export default function Home() {
     );
   }
 
+  {/* ここからメイン画面の表示 */}
   return (
     <div style={{ padding: "30px 20px", maxWidth: 450, margin: "0 auto", backgroundColor: colors.bg, minHeight: "100vh", fontFamily: "sans-serif", color: colors.text }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
@@ -175,13 +177,13 @@ export default function Home() {
         
         <div style={{ background: colors.bg, padding: "25px", borderRadius: "25px", textAlign: "center", marginBottom: "25px" }}>
           <div style={{ fontSize: "50px", marginBottom:"10px" }}>{levelGuides[level].emoji}</div>
-          <div style={{ fontWeight: "800", fontSize:"18px", color:colors.text }}>{levelGuides[level].status}</div>
+          <div style={{ fontWeight: "800", fontSize: "18px", color: colors.text }}>{levelGuides[level].status}</div>
         </div>
 
         <div style={{ textAlign: "left", fontSize: "14px", borderTop: `1px dashed ${colors.main}`, paddingTop: "20px" }}>
-          <div style={{marginBottom:"15px"}}><strong>👟 やっていること</strong><br/><span style={{color:colors.subText}}>{config.levels[level].doing || "（設定なし）"}</span></div>
-          <div style={{marginBottom:"15px"}}><strong>🍼 お願いしたいこと</strong><br/><span style={{color:colors.subText}}>{config.levels[level].requests || "（設定なし）"}</span></div>
-          <div><strong>🚫 遠慮してほしいこと</strong><br/><span style={{color:colors.subText}}>{config.levels[level].notToDo || "（設定なし）"}</span></div>
+          <div style={{marginBottom:"15px"}}><strong>👟 やっていること</strong><br/><span style={{color:colors.subText}}>{config.levels[level].doing || "（未設定）"}</span></div>
+          <div style={{marginBottom:"15px"}}><strong>🍼 お願いしたいこと</strong><br/><span style={{color:colors.subText}}>{config.levels[level].requests || "（未設定）"}</span></div>
+          <div><strong>🚫 遠慮してほしいこと</strong><br/><span style={{color:colors.subText}}>{config.levels[level].notToDo || "（未設定）"}</span></div>
         </div>
       </section>
     </div>
