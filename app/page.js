@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 
-// あなたの最新設定 (20:12のスクショから正確に写しました)
 const firebaseConfig = {
   apiKey: "AIzaSyC3S7sO5trehM1cNHOzo6cc49D8V4rXSqg",
   authDomain: "yorisoi-app-89ce7.firebaseapp.com",
@@ -37,7 +36,11 @@ export default function YorisoiApp() {
   }, []);
 
   const saveToFirebase = async (newData) => {
-    await setDoc(doc(db, "users", myId), { configData: newData }, { merge: true });
+    try {
+      await setDoc(doc(db, "users", myId), { configData: newData }, { merge: true });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const addTag = (lv, field) => {
@@ -47,7 +50,6 @@ export default function YorisoiApp() {
     if (!newData[activeSymptom]) newData[activeSymptom] = {};
     if (!newData[activeSymptom][lv]) newData[activeSymptom][lv] = { doing: [], requests: [] };
     if (!Array.isArray(newData[activeSymptom][lv][field])) newData[activeSymptom][lv][field] = [];
-    
     newData[activeSymptom][lv][field].push(text);
     setConfig({ ...config, data: newData });
     saveToFirebase(newData);
@@ -65,20 +67,17 @@ export default function YorisoiApp() {
       <div style={{ padding: "20px", background: "#f8f9fa", minHeight: "100vh", fontFamily: "sans-serif" }}>
         <button onClick={() => setIsSetting(false)} style={{padding:"10px 20px", borderRadius:"10px", border:"none", background:"#fff", fontWeight:"bold", marginBottom:"20px", boxShadow:"0 2px 5px rgba(0,0,0,0.1)"}}>◀ 戻る</button>
         <h2 style={{fontSize:"18px", color:"#333", marginBottom:"20px"}}>詳細設定: {activeSymptom}</h2>
-        
         {[0, 1, 2, 3, 4, 5].map(lv => (
           <div key={lv} style={{ background: "#fff", padding: "15px", borderRadius: "15px", marginBottom: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
             <h3 style={{ margin: "0 0 10px 0", fontSize: "20px" }}>レベル {lv}</h3>
-            
-            <p style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>自分がしていること（背景：薄青）</p>
+            <p style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>自分がしていること</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", background: "#eef6ff", padding: "10px", borderRadius: "10px", minHeight: "40px" }}>
               {(config.data[activeSymptom]?.[lv]?.doing || []).map((text, i) => (
                 <span key={i} onClick={() => removeTag(lv, "doing", i)} style={{ background: "#fff", padding: "5px 12px", borderRadius: "20px", border: "1px solid #8E97FD", fontSize: "14px" }}>{text} ✕</span>
               ))}
               <button onClick={() => addTag(lv, "doing")} style={{ background: "#8E97FD", color: "#fff", border: "none", borderRadius: "20px", padding: "5px 15px", fontSize: "14px" }}>＋追加</button>
             </div>
-
-            <p style={{ fontSize: "12px", color: "#666", marginTop: "15px", marginBottom: "5px" }}>してほしいこと（背景：薄赤）</p>
+            <p style={{ fontSize: "12px", color: "#666", marginTop: "15px", marginBottom: "5px" }}>してほしいこと</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", background: "#fff0f0", padding: "10px", borderRadius: "10px", minHeight: "40px" }}>
               {(config.data[activeSymptom]?.[lv]?.requests || []).map((text, i) => (
                 <span key={i} onClick={() => removeTag(lv, "requests", i)} style={{ background: "#fff", padding: "5px 12px", borderRadius: "20px", border: "1px solid #ff8e8e", fontSize: "14px" }}>{text} ✕</span>
