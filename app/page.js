@@ -96,7 +96,7 @@ if (isSetting) {
         { cat: "🌡️ 環境・ケア", items: ["部屋を暗くしてほしい", "静かにしてほしい", "湯たんぽ（カイロ）を用意してほしい", "腰や肩をさすってほしい"] },
         { cat: "🕊️ 放置・見守り", items: ["放っておいてほしい（寝かせて）", "1〜2時間後に一度様子を見てほしい", "返信不要でスタンプだけ送って"] }
       ],
-      notToDo: ["今は話しかけないでほしい", "大きな音を立てないで", "部屋を明るくしないで", "強い匂いのものは控えて", "そっとしておいて"]
+      notToDo: ["溜まった家事について触れないで", "今は話しかけないでほしい", "大きな音を立てないで", "部屋を明るくしないで", "強い匂いのものは控えて", "そっとしておいて"]
     };
 
     const toggleSuggestion = (field, value) => {
@@ -110,6 +110,44 @@ if (isSetting) {
         newText = currentText ? `${currentText}、${value}` : value;
       }
       setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], [field]: newText}}});
+    };
+
+    const generateCard = (text, type) => {
+      // 実際にはここでCanvasなどを使って画像データ(DataURL)を生成します
+      // 今回はデモとして、アラートで生成した「つもり」にします。
+      const cardCanvas = document.createElement("canvas");
+      cardCanvas.width = 400;
+      cardCanvas.height = 250;
+      const ctx = cardCanvas.getContext("2d");
+
+      // 背景
+      ctx.fillStyle = colors.bg;
+      ctx.fillRect(0, 0, 400, 250);
+      ctx.strokeStyle = colors.main;
+      ctx.lineWidth = 10;
+      ctx.strokeRect(10, 10, 380, 230);
+
+      // テキスト
+      ctx.fillStyle = colors.text;
+      ctx.font = "bold 20px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const lines = text.split("、");
+      lines.forEach((line, i) => {
+        ctx.fillText(line, 200, 125 + (i - (lines.length - 1) / 2) * 30);
+      });
+
+      // タイプ（絵文字など）
+      ctx.font = "50px sans-serif";
+      const emoji = type === "doing" ? "👟" : type === "requests" ? "🍼" : "🚫";
+      ctx.fillText(emoji, 200, 60);
+
+      const cardImageUrl = cardCanvas.toDataURL("image/png");
+      
+      // 生成した画像を別ウィンドウで開く（保存できるように）
+      const newWindow = window.open();
+      newWindow.document.write(`<img src="${cardImageUrl}" alt="寄り添いカード" style="border: 10px solid ${colors.main}; border-radius: 20px; box-shadow: 0 10px 20px ${colors.shadow};" />`);
+      newWindow.document.write(`<p style="font-family: sans-serif; color: ${colors.text}; text-align: center;">この画像を保存して、パートナーに送ってね！</p>`);
     };
 
     return (
@@ -169,6 +207,15 @@ if (isSetting) {
                 style={{width:"100%", height:"50px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"13px"}} 
                 placeholder="または自由に記述..." 
               />
+              {/* 一言カード生成ボタン */}
+              {config.levels[currentLevelTab][item.field] && (
+                <button 
+                  onClick={() => generateCard(config.levels[currentLevelTab][item.field], item.field)}
+                  style={{ marginTop: "10px", padding: "8px 15px", background: "white", color: colors.main, border: `2px solid ${colors.main}`, borderRadius: "20px", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}
+                >
+                  {item.icon} 一言カードを作成
+                </button>
+              )}
             </div>
           ))}
         </div>
