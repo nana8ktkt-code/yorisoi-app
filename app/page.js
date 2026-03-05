@@ -3,14 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 
-// 手順1で新しく発行された内容に書き換えてください！
+// あなたの最新設定 (20:12のスクショから正確に写しました)
 const firebaseConfig = {
   apiKey: "AIzaSyC3S7sO5trehM1cNHOzo6cc49D8V4rXSqg",
   authDomain: "yorisoi-app-89ce7.firebaseapp.com",
   projectId: "yorisoi-app-89ce7",
   storageBucket: "yorisoi-app-89ce7.firebasestorage.app",
   messagingSenderId: "509189105205",
-  appId: "ここに新しく発行されたappIdを貼る", 
+  appId: "1:509189105205:web:7ffc405665e85fed92f37c",
   measurementId: "G-SZEFW40W4C"
 };
 
@@ -22,22 +22,16 @@ export default function YorisoiApp() {
   const [activeSymptom, setActiveSymptom] = useState("生理痛");
   const [isSetting, setIsSetting] = useState(false);
   const [myId, setMyId] = useState("");
-  const [editSymptom, setEditSymptom] = useState("生理痛");
-  const [editLevel, setEditLevel] = useState(0);
-  const [config, setConfig] = useState({ 
-    symptoms: ["生理痛", "つわり", "PMS", "頭痛", "だるい", "腹痛"], 
-    data: {} 
-  });
+  const [config, setConfig] = useState({ symptoms: ["生理痛", "つわり", "PMS", "頭痛", "だるい", "腹痛"], data: {} });
 
   useEffect(() => {
     let id = localStorage.getItem("yorisoi_user_id") || Math.floor(100000 + Math.random() * 900000).toString();
     localStorage.setItem("yorisoi_user_id", id);
     setMyId(id);
-
     return onSnapshot(doc(db, "users", id), (docSnap) => {
       if (docSnap.exists()) {
         const d = docSnap.data();
-        if (d.configData) setConfig(prev => ({ ...prev, data: d.configData }));
+        if (d.configData) setConfig(prev => ({...prev, data: d.configData}));
       }
     });
   }, []);
@@ -46,44 +40,83 @@ export default function YorisoiApp() {
     await setDoc(doc(db, "users", myId), { configData: newData }, { merge: true });
   };
 
-  const updateDetail = (field, value) => {
+  const addTag = (lv, field) => {
+    const text = window.prompt("追加したい内容を入力してください");
+    if (!text) return;
     const newData = { ...config.data };
-    if (!newData[editSymptom]) newData[editSymptom] = {};
-    if (!newData[editSymptom][editLevel]) newData[editSymptom][editLevel] = {};
-    newData[editSymptom][editLevel][field] = value;
+    if (!newData[activeSymptom]) newData[activeSymptom] = {};
+    if (!newData[activeSymptom][lv]) newData[activeSymptom][lv] = { doing: [], requests: [] };
+    if (!Array.isArray(newData[activeSymptom][lv][field])) newData[activeSymptom][lv][field] = [];
+    
+    newData[activeSymptom][lv][field].push(text);
+    setConfig({ ...config, data: newData });
+    saveToFirebase(newData);
+  };
+
+  const removeTag = (lv, field, index) => {
+    const newData = { ...config.data };
+    newData[activeSymptom][lv][field].splice(index, 1);
     setConfig({ ...config, data: newData });
     saveToFirebase(newData);
   };
 
   if (isSetting) {
     return (
-      <div style={{ padding: "20px", background: "#F2F5FF", minHeight: "100vh" }}>
-        <button onClick={() => setIsSetting(false)} style={{padding:"10px", marginBottom:"20px", borderRadius:"10px", border:"none", background:"#fff"}}>◀ 戻る</button>
-        <div style={{ background: "#fff", padding: "20px", borderRadius: "20px" }}>
-          <p style={{fontWeight:"bold", color:"#8E97FD"}}>① 編集する症状を選ぶ（ここがプルダウンです）</p>
-          <select value={editSymptom} onChange={(e) => setEditSymptom(e.target.value)} style={{ width: "100%", padding: "12px", borderRadius: "10px", marginBottom: "20px", border: "1px solid #ddd", fontSize: "16px" }}>
-            {config.symptoms.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <p style={{fontWeight:"bold", color:"#8E97FD"}}>② レベルを選ぶ</p>
-          <div style={{ display: "flex", gap: "5px", marginBottom: "20px" }}>
-            {[0,1,2,3,4,5].map(l => (
-              <button key={l} onClick={() => setEditLevel(l)} style={{ flex: 1, padding: "10px", background: editLevel === l ? "#8E97FD" : "#eee", color: editLevel === l ? "#fff" : "#4A4A4A", border:"none", borderRadius:"8px" }}>{l}</button>
-            ))}
+      <div style={{ padding: "20px", background: "#f8f9fa", minHeight: "100vh", fontFamily: "sans-serif" }}>
+        <button onClick={() => setIsSetting(false)} style={{padding:"10px 20px", borderRadius:"10px", border:"none", background:"#fff", fontWeight:"bold", marginBottom:"20px", boxShadow:"0 2px 5px rgba(0,0,0,0.1)"}}>◀ 戻る</button>
+        <h2 style={{fontSize:"18px", color:"#333", marginBottom:"20px"}}>詳細設定: {activeSymptom}</h2>
+        
+        {[0, 1, 2, 3, 4, 5].map(lv => (
+          <div key={lv} style={{ background: "#fff", padding: "15px", borderRadius: "15px", marginBottom: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
+            <h3 style={{ margin: "0 0 10px 0", fontSize: "20px" }}>レベル {lv}</h3>
+            
+            <p style={{ fontSize: "12px", color: "#666", marginBottom: "5px" }}>自分がしていること（背景：薄青）</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", background: "#eef6ff", padding: "10px", borderRadius: "10px", minHeight: "40px" }}>
+              {(config.data[activeSymptom]?.[lv]?.doing || []).map((text, i) => (
+                <span key={i} onClick={() => removeTag(lv, "doing", i)} style={{ background: "#fff", padding: "5px 12px", borderRadius: "20px", border: "1px solid #8E97FD", fontSize: "14px" }}>{text} ✕</span>
+              ))}
+              <button onClick={() => addTag(lv, "doing")} style={{ background: "#8E97FD", color: "#fff", border: "none", borderRadius: "20px", padding: "5px 15px", fontSize: "14px" }}>＋追加</button>
+            </div>
+
+            <p style={{ fontSize: "12px", color: "#666", marginTop: "15px", marginBottom: "5px" }}>してほしいこと（背景：薄赤）</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", background: "#fff0f0", padding: "10px", borderRadius: "10px", minHeight: "40px" }}>
+              {(config.data[activeSymptom]?.[lv]?.requests || []).map((text, i) => (
+                <span key={i} onClick={() => removeTag(lv, "requests", i)} style={{ background: "#fff", padding: "5px 12px", borderRadius: "20px", border: "1px solid #ff8e8e", fontSize: "14px" }}>{text} ✕</span>
+              ))}
+              <button onClick={() => addTag(lv, "requests")} style={{ background: "#ff8e8e", color: "#fff", border: "none", borderRadius: "20px", padding: "5px 15px", fontSize: "14px" }}>＋追加</button>
+            </div>
           </div>
-          <textarea value={config.data[editSymptom]?.[editLevel]?.doing || ""} onChange={e => updateDetail("doing", e.target.value)} placeholder="いまの状態" style={{width:"100%", height:"60px", marginBottom:"10px", borderRadius:"8px", padding:"10px", border:"1px solid #ddd", boxSizing:"border-box"}} />
-          <textarea value={config.data[editSymptom]?.[editLevel]?.requests || ""} onChange={e => updateDetail("requests", e.target.value)} placeholder="お願い" style={{width:"100%", height:"60px", borderRadius:"8px", padding:"10px", border:"1px solid #ddd", boxSizing:"border-box"}} />
-        </div>
+        ))}
       </div>
     );
   }
 
   return (
-    <div style={{ padding: "20px", background: "#F2F5FF", minHeight: "100vh", textAlign: "center" }}>
-      <div style={{display:"flex", justifyContent:"space-between", marginBottom:"20px"}}>
-        <h2 style={{color:"#8E97FD"}}>Yorisoi🕊️</h2>
-        <button style={{border:"none", background:"#fff", width:"40px", height:"40px", borderRadius:"50%"}} onClick={() => setIsSetting(true)}>⚙️</button>
+    <div style={{ padding: "20px", background: "#F2F5FF", minHeight: "100vh", textAlign: "center", fontFamily: "sans-serif" }}>
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"20px"}}>
+        <h2 style={{color:"#8E97FD", margin:0}}>Yorisoi🕊️</h2>
+        <button onClick={() => setIsSetting(true)} style={{background:"#fff", border:"none", borderRadius:"50%", width:"45px", height:"45px", boxShadow:"0 2px 5px rgba(0,0,0,0.1)"}}>⚙️</button>
       </div>
-      <p>⚙️ボタンを押して設定を開いてください</p>
+      <div style={{display:"flex", gap:"10px", overflowX:"auto", marginBottom:"20px", paddingBottom:"10px"}}>
+        {config.symptoms.map(s => (
+          <button key={s} onClick={() => setActiveSymptom(s)} style={{padding:"10px 20px", borderRadius:"20px", border:"none", background:activeSymptom === s ? "#8E97FD" : "#fff", color:activeSymptom === s ? "#fff" : "#4A4A4A", fontWeight:"bold", whiteSpace:"nowrap"}}>{s}</button>
+        ))}
+      </div>
+      <div style={{background:"#fff", padding:"30px", borderRadius:"30px", boxShadow:"0 10px 20px rgba(0,0,0,0.05)"}}>
+        <div style={{display:"flex", justifyContent:"space-around", marginBottom:"20px"}}>
+          {[0,1,2,3,4,5].map(n => <button key={n} onClick={() => setLevel(n)} style={{width:"40px", height:"40px", borderRadius:"50%", border:"none", background:level === n ? "#8E97FD" : "#F2F5FF", color:level === n ? "#fff" : "#8E97FD", fontWeight:"bold"}}>{n}</button>)}
+        </div>
+        <div style={{textAlign:"left", background:"#F2F5FF", padding:"20px", borderRadius:"15px"}}>
+          <p><strong>👟 状態:</strong></p>
+          <div style={{display:"flex", flexWrap:"wrap", gap:"5px", marginBottom:"15px"}}>
+            {(config.data[activeSymptom]?.[level]?.doing || []).map((t, i) => <span key={i} style={{background:"#fff", padding:"5px 12px", borderRadius:"15px", fontSize:"14px", border:"1px solid #8E97FD"}}>{t}</span>)}
+          </div>
+          <p><strong>🍼 お願い:</strong></p>
+          <div style={{display:"flex", flexWrap:"wrap", gap:"5px"}}>
+            {(config.data[activeSymptom]?.[level]?.requests || []).map((t, i) => <span key={i} style={{background:"#fff", padding:"5px 12px", borderRadius:"15px", fontSize:"14px", border:"1px solid #ff8e8e"}}>{t}</span>)}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
