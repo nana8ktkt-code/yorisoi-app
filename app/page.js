@@ -14,9 +14,9 @@ export default function Home() {
 
   // おすすめ選択肢（復活！）
   const suggestions = {
-    doing: ["薬を飲んだ", "横になっている", "温めている", "水分を摂っている", "安静にしている"],
-    request: ["洗い物をお願い", "コンビニでゼリー買ってきて", "静かにしてほしい", "腰をさすって", "部屋を暗くして"],
-    ng: ["「大丈夫？」と何度も聞かないで", "アドバイスしないで", "大きな音を立てないで", "強い匂いのものを食べないで"]
+    doing: ["薬を飲んだ", "温めている", "水分を摂っている", "安静にしている"],
+    request: ["家事をお願い", "ごはんは別々でお願い", "静かにしてほしい", "腰をさすって", "おかゆを作ってほしい""うどんを作ってほしい"],
+    ng: ["「声がでません", "アドバイスしないで", "大きな音を立てないで", "強い匂いのものを食べないで", "とにかく寝させて"]
   };
 
   const initialData = {};
@@ -157,7 +157,7 @@ export default function Home() {
               </div>
               <button onClick={() => sendMessage("status")} style={{ width: "100%", padding: 18, background: colors.main, color: "white", borderRadius: 35, border: "none", fontSize: "18px", fontWeight: "bold", marginTop: 20 }}>LINEで伝える</button>
               <div style={{ marginTop: 10, display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                {["家事助かった！", "ゼリーありがとう", "静かにしてくれて感謝"].map(t => (
+                {["家事助かった♡", "いつもありがとう"].map(t => (
                   <button key={t} onClick={() => sendMessage("thanks", t)} style={{ flex: 1, padding: "8px", fontSize: "12px", borderRadius: "20px", border: `1px solid ${colors.main}`, color: colors.main, background: "white" }}>{t}</button>
                 ))}
               </div>
