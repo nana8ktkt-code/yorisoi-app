@@ -98,7 +98,7 @@ export default function Home() {
           ))}
         </div>
 
-  <div style={{ background: "white", padding: "20px", borderRadius: "25px", boxShadow: `0 10px 30px ${colors.shadow}` }}>
+<div style={{ background: "white", padding: "20px", borderRadius: "25px", boxShadow: `0 10px 30px ${colors.shadow}` }}>
           <h4 style={{marginTop:0, color:colors.main, marginBottom:"20px"}}>レベル {currentLevelTab} の設定をつくる</h4>
           
           {/* ① まず症状を選んで、その時の自分を想像する */}
@@ -132,7 +132,7 @@ export default function Home() {
 
           <div style={{ marginBottom: "10px" }}>
             <label style={{fontSize:"13px", fontWeight:"bold", display:"block", marginBottom:"5px"}}>🚫 遠慮してほしいこと</label>
-            <textarea value={config.levels[currentLevelTab].notToDo} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], notToDo: e.target.value}}})} style={{width:"100%", height:"60px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"14px"}} placeholder="例：今は話しかけないでそっとしておいて" />
+            <textarea value={config.levels[currentLevelTab].notToDo} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], notToDo: e.target.value}}})} style={{width:"100%", height:"60px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"14px"}} placeholder="例：今は話しかけないでそってしておいて" />
           </div>
         </div>
         
@@ -140,6 +140,16 @@ export default function Home() {
       </div>
     );
   }
+
+  return (
+    <div style={{ padding: "30px 20px", maxWidth: 450, margin: "0 auto", backgroundColor: colors.bg, minHeight: "100vh", fontFamily: "sans-serif", color: colors.text }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+        <div>
+          <h1 style={{ fontSize: "24px", fontWeight: "800", color: colors.main, margin: 0 }}>Yorisoi 🕊️</h1>
+          <p style={{ fontSize: "11px", color: colors.subText }}>大切な人に、今のあなたを届ける</p>
+        </div>
+        <button onClick={() => setIsSetting(true)} style={{ background: "white", border: "none", fontSize: "20px", width:"45px", height:"45px", borderRadius:"50%", boxShadow: `0 5px 15px ${colors.shadow}` }}>⚙️</button>
+      </div>
 
       <section style={{ marginBottom: 35 }}>
         <h3 style={{ fontSize: "16px", marginBottom: "15px" }}>今の症状</h3>
