@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 
+// あなたの今の成功している設定を維持しています
 const firebaseConfig = {
   apiKey: "AIzaSyC3S7sO5trehM1cNHOzo6cc49D8V4rXSqg",
   authDomain: "yorisoi-app-89ce7.firebaseapp.com",
@@ -38,9 +39,7 @@ export default function YorisoiApp() {
   const saveToFirebase = async (newData) => {
     try {
       await setDoc(doc(db, "users", myId), { configData: newData }, { merge: true });
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const addTag = (lv, field) => {
@@ -119,3 +118,4 @@ export default function YorisoiApp() {
     </div>
   );
 }
+
