@@ -12,11 +12,19 @@ export default function Home() {
   const symptomsList = ["つわり", "生理痛", "PMS", "気持ちの浮き沈み", "頭痛", "喉が痛い", "腹痛", "熱がある", "体がだるい", "その他"];
   const colors = { bg: "#F9FDFF", main: "#8EC6E8", doing: "#EBF5FF", request: "#FFF0F0", ng: "#FFF5E6", text: "#4A4A4A", accent: "#FFB7B7" };
 
-  // おすすめ選択肢（復活！）
+  const moodCards = [
+    { id: "quiet",  label: "そっとしておいて", icon: "🤫", border: "🔗", text: "今はそっとしておいてモード。\n静かに見守っててね。" },
+    { id: "hug",    label: "甘えたい",       icon: "🥺", border: "💖", text: "甘えたいモード。\n優しくしてほしいな。" },
+    { id: "help",   label: "助けてほしい",   icon: "🆘", border: "🆘", text: "助けてほしいモード。\nおねがいを聞いて〜！" },
+    { id: "sleep",  label: "眠りたい",       icon: "😴", border: "💤", text: "眠りたいモード。\nゆっくり寝かせて。" },
+    { id: "eater",  label: "何か食べたい",   icon: "😋", border: "🍔", text: "何か食べたいモード。\n美味しいもの、ある？" }
+  ];
+
+  // ご要望に合わせて選択肢を更新しました
   const suggestions = {
-    doing: ["薬を飲んだ", "温めている", "水分を摂っている", "安静にしている"],
-    request: ["家事をお願い", "ごはんは別々でお願い", "静かにしてほしい", "腰をさすって", "おかゆを作ってほしい""うどんを作ってほしい"],
-    ng: ["「声がでません", "アドバイスしないで", "大きな音を立てないで", "強い匂いのものを食べないで", "とにかく寝させて"]
+    doing: ["薬を飲んだ", "声が出ません", "温めている", "水分を摂っている", "安静にしている"],
+    request: ["おかゆを作ってほしい", "うどんを作ってほしい", "静かにしてほしい", "腰をさすって", "部屋を暗くして"],
+    ng: ["とにかく寝かせて", "アドバイスしないで", "大きな音を立てないで", "強い匂いのものを食べないで"]
   };
 
   const initialData = {};
@@ -27,7 +35,7 @@ export default function Home() {
   const [presets, setPresets] = useState(initialData);
 
   useEffect(() => {
-    const saved = localStorage.getItem("yorisoi_v11_presets");
+    const saved = localStorage.getItem("yorisoi_v13_presets");
     if (saved) setPresets(JSON.parse(saved));
     const savedDates = localStorage.getItem("yorisoi_period_dates");
     if (savedDates) setPeriodDates(JSON.parse(savedDates));
@@ -37,7 +45,7 @@ export default function Home() {
 
   const saveToLocal = (newData) => {
     setPresets({ ...newData });
-    localStorage.setItem("yorisoi_v11_presets", JSON.stringify(newData));
+    localStorage.setItem("yorisoi_v13_presets", JSON.stringify(newData));
   };
 
   const addAction = (symptom, lvl, type, value = "") => {
@@ -52,7 +60,7 @@ export default function Home() {
     saveToLocal(newData);
   };
 
-  const sendMessage = (type, subType = "") => {
+  const sendMessage = (type, subType = "", cardData = null) => {
     let text = "";
     if (type === "status") {
       let doingList = []; let reqList = []; let ngList = [];
@@ -62,11 +70,16 @@ export default function Home() {
         reqList.push(...current.request.filter(t => t));
         ngList.push(...current.ng.filter(t => t));
       });
-      const todayStr = `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}`;
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
       const periodAlert = (sharePeriodStatus && periodDates.includes(todayStr)) ? "【生理期間中です🩸】\n" : "";
       text = `${periodAlert}【Yorisoi🕊️現状報告】\n症状：${selectedSymptoms.join("、")}\nしんどさ：Lv.${level}\n\n【今やってること】\n${doingList.map(t => `・${t}`).join("\n") || "特になし"}\n\n【おねがい】\n${reqList.map(t => `・${t}`).join("\n") || "ゆっくりさせてね"}\n\n${ngList.length ? "⚠️NG：\n" + ngList.map(t => `・${t}`).join("\n") + "\n" : ""}`;
     } else if (type === "thanks") {
       text = `【Yorisoi🕊️】\n体調が少し落ち着きました！\n${subType || "サポートありがとう✨"}`;
+    } else if (type === "card") {
+      const b = cardData.border;
+      const title = ` ${cardData.icon} ${cardData.label} ${cardData.icon} `;
+      text = `${b.repeat(10)}\n${b}${title.padEnd(16, " ")}${b}\n${b.repeat(10)}\n\n${cardData.text}`;
     }
     window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text)}`, "_blank");
   };
@@ -141,7 +154,19 @@ export default function Home() {
       ) : (
         <div>
           <section style={{ marginBottom: 25 }}>
-            <h3 style={{ fontSize: "16px", marginBottom: 12 }}>1. 今の症状</h3>
+            <h3 style={{ fontSize: "16px", marginBottom: 12 }}>1. 今の一言（スタンプ代わりに）</h3>
+            <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "10px" }}>
+              {moodCards.map(card => (
+                <button key={card.id} onClick={() => sendMessage("card", "", card)} style={{ flex: "0 0 120px", padding: "15px", borderRadius: "16px", border: `2px solid ${colors.main}`, background: "white", textAlign: "center", color: colors.text }}>
+                  <div style={{ fontSize: "30px", marginBottom: "5px" }}>{card.icon}</div>
+                  <div style={{ fontSize: "12px", fontWeight: "bold" }}>{card.label}</div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section style={{ marginBottom: 25 }}>
+            <h3 style={{ fontSize: "16px", marginBottom: 12 }}>2. 今の症状</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {symptomsList.map(s => (
                 <button key={s} onClick={() => setSelectedSymptoms(prev => prev.includes(s) ? prev.filter(i => i !== s) : [...prev, s])} style={{ padding: "15px 10px", borderRadius: 12, border: "1px solid #DDD", background: selectedSymptoms.includes(s) ? colors.main : "white", color: selectedSymptoms.includes(s) ? "white" : colors.text, fontWeight: "bold", fontSize: "15px" }}>{s}</button>
@@ -151,16 +176,11 @@ export default function Home() {
 
           {selectedSymptoms.length > 0 && (
             <section style={{ marginBottom: 25 }}>
-              <h3 style={{ fontSize: "16px", marginBottom: 12 }}>2. しんどさ</h3>
+              <h3 style={{ fontSize: "16px", marginBottom: 12 }}>3. しんどさレベル</h3>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 5 }}>
                 {[0, 1, 2, 3, 4, 5].map(n => <button key={n} onClick={() => setLevel(n)} style={{ width: "15%", height: 50, borderRadius: 10, border: `2px solid ${colors.main}`, background: level === n ? colors.main : "white", color: level === n ? "white" : colors.main, fontWeight: "bold", fontSize: "18px" }}>{n}</button>)}
               </div>
               <button onClick={() => sendMessage("status")} style={{ width: "100%", padding: 18, background: colors.main, color: "white", borderRadius: 35, border: "none", fontSize: "18px", fontWeight: "bold", marginTop: 20 }}>LINEで伝える</button>
-              <div style={{ marginTop: 10, display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                {["家事助かった♡", "いつもありがとう"].map(t => (
-                  <button key={t} onClick={() => sendMessage("thanks", t)} style={{ flex: 1, padding: "8px", fontSize: "12px", borderRadius: "20px", border: `1px solid ${colors.main}`, color: colors.main, background: "white" }}>{t}</button>
-                ))}
-              </div>
             </section>
           )}
 
