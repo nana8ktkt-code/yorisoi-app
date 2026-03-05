@@ -102,7 +102,7 @@ if (isSetting) {
         <div style={{ background: "white", padding: "20px", borderRadius: "25px", boxShadow: `0 10px 30px ${colors.shadow}` }}>
           <h4 style={{marginTop:0, color:colors.main, marginBottom:"20px"}}>レベル {currentLevelTab} の設定をつくる</h4>
           
-          {/* ① まず症状を選んで、その時の自分を想像する（これを一番上にしました！） */}
+          {/* ① 症状プルダウン（ポップアップなし） */}
           <div style={{ marginBottom: "25px", padding: "15px", background: colors.bg, borderRadius: "18px", border: `1px solid ${colors.shadow}` }}>
             <label style={{ fontSize: "12px", fontWeight: "bold", display: "block", marginBottom: "8px", color: colors.main }}>
               🌡️ どの症状のときの設定ですか？（確認）
@@ -110,7 +110,7 @@ if (isSetting) {
             <select 
               style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid #ddd", fontSize: "14px", backgroundColor: "white" }}
               onChange={(e) => {
-                if(e.target.value) alert(e.target.value + " の時のことを下の欄に書きましょう！");
+                // ポップアップを削除しました
               }}
             >
               <option value="">症状を選んでイメージを膨らませる...</option>
@@ -142,7 +142,6 @@ if (isSetting) {
     );
   }
 
-  {/* ここからメイン画面の表示 */}
   return (
     <div style={{ padding: "30px 20px", maxWidth: 450, margin: "0 auto", backgroundColor: colors.bg, minHeight: "100vh", fontFamily: "sans-serif", color: colors.text }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
