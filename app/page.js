@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { createClient } from '@supabase/supabase-js';
 
-// ★Supabaseの設定（あなたのURLとKeyを埋め込み済み）
 const SUPABASE_URL = 'https://sxjxdmyhhnrgljmxfujo.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4anhkbXloaG5yZ2xqbXhmdWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NjYzNDcsImV4cCI6MjA4ODI0MjM0N30.V_YboSipxMboF1EpLANd1F063a7ayCd9DE-e5_MZBuw';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -17,7 +16,8 @@ export default function Home() {
     text: "#334455", subText: "#8899AA", shadow: "rgba(142, 198, 232, 0.15)"
   };
 
-  const symptomsList = ["つわり", "生理痛", "PMS", "心の浮き沈み", "頭痛", "だるい"];
+  // ★以前の症状リストを復活
+  const symptomsList = ["つわり", "生理痛", "PMS", "心の浮き沈み", "頭痛", "だるい", "喉が痛い", "腰痛", "腹痛"];
 
   const levelGuides = {
     0: { status: "落ち着いています", emoji: "🌿" },
@@ -28,7 +28,6 @@ export default function Home() {
     5: { status: "とにかく寝たい", emoji: "🚫" }
   };
 
-  // 起動時にユーザーIDを取得・作成
   useEffect(() => {
     let id = localStorage.getItem("yorisoi_user_id");
     if (!id) {
@@ -38,19 +37,14 @@ export default function Home() {
     setUserId(id);
   }, []);
 
-  // ★Supabaseへ保存する処理
   const saveStatus = async (newLevel, newSymptoms) => {
     if (!userId) return;
-    const { error } = await supabase
-      .from('health_status')
-      .upsert({ 
-        user_id: userId,
-        level: newLevel,
-        symptoms: newSymptoms.join("、"),
-        emoji: levelGuides[newLevel].emoji
-      }, { onConflict: 'user_id' });
-
-    if (error) console.error("保存失敗:", error.message);
+    await supabase.from('health_status').upsert({ 
+      user_id: userId,
+      level: newLevel,
+      symptoms: newSymptoms.join("、"),
+      emoji: levelGuides[newLevel].emoji
+    }, { onConflict: 'user_id' });
   };
 
   const handleLevelChange = (n) => {
@@ -59,21 +53,15 @@ export default function Home() {
   };
 
   const handleSymptomClick = (s) => {
-    const next = selectedSymptoms.includes(s) 
-      ? selectedSymptoms.filter(i => i !== s) 
-      : [...selectedSymptoms, s];
+    const next = selectedSymptoms.includes(s) ? selectedSymptoms.filter(i => i !== s) : [...selectedSymptoms, s];
     setSelectedSymptoms(next);
     saveStatus(level, next);
   };
 
   const generateShareUrl = () => {
-    // 公開後のURLを想定して発行
-    const baseUrl = window.location.origin;
-    const url = `${baseUrl}/partner?id=${userId}`;
-    
-    // クリップボードにコピー
+    const url = `${window.location.origin}/partner?id=${userId}`;
     navigator.clipboard.writeText(url);
-    alert("パートナー専用URLをコピーしました！\nこのままLINEなどで送れます。\n\n" + url);
+    alert("パートナー専用URLをコピーしました！");
   };
 
   return (
@@ -90,7 +78,7 @@ export default function Home() {
             const isSelected = selectedSymptoms.includes(s);
             return (
               <button key={s} onClick={() => handleSymptomClick(s)} 
-                style={{ padding: "15px", borderRadius: "15px", border: "none", background: isSelected ? colors.main : colors.card, color: isSelected ? "white" : colors.text, boxShadow: `0 4px 10px ${colors.shadow}`, fontWeight: "600" }}>
+                style={{ padding: "12px", borderRadius: "15px", border: "none", background: isSelected ? colors.main : colors.card, color: isSelected ? "white" : colors.text, boxShadow: `0 4px 10px ${colors.shadow}`, fontWeight: "600" }}>
                 {s}
               </button>
             );
@@ -113,7 +101,17 @@ export default function Home() {
           <div style={{ fontWeight: "800" }}>{levelGuides[level].status}</div>
         </div>
 
-        <button onClick={generateShareUrl} style={{ width: "100%", padding: "15px", background: colors.main, color: "white", borderRadius: "20px", border: "none", fontWeight: "800", cursor: "pointer", boxShadow: `0 10px 20px ${colors.shadow}` }}>
+        {/* ★お願いリスト（ToDo）の表示 */}
+        <div style={{ marginTop: "20px", padding: "15px", borderTop: `1px dashed ${colors.main}` }}>
+          <h4 style={{ fontSize: "14px", color: colors.main }}>🍼 おねがい（ToDo）</h4>
+          <ul style={{ paddingLeft: "20px", fontSize: "13px", color: colors.text }}>
+            <li>おかゆを作ってほしい</li>
+            <li>静かにしてほしい</li>
+            <li>背中をさすってほしい</li>
+          </ul>
+        </div>
+
+        <button onClick={generateShareUrl} style={{ width: "100%", padding: "15px", background: colors.main, color: "white", borderRadius: "20px", border: "none", fontWeight: "800", marginTop: "15px" }}>
           🔗 パートナー専用URLをコピーする
         </button>
       </section>
