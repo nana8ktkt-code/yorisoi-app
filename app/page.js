@@ -88,16 +88,23 @@ export default function Home() {
 
 if (isSetting) {
     const suggestions = {
-      doing: ["横になって休んでいるよ", "お薬飲んでいる", "暗い部屋で寝てる", "食欲はない"],
-      requests: ["温かい飲み物がほしい", "家事お願いしたい", "腰をさすってほしい", "濡れタオルを頭にのせてほしい"],
-      notToDo: ["今は話しかけないでほしい", "部屋を明るくしないで", "強い匂いのものは控えて", "そっとしておいて"]
+      doing: ["横になって休んでいるよ", "薬を飲んで安静にしてる", "暗い部屋で寝てる", "食欲ないの", "少し落ち着いてきた"],
+      requests: [
+        { cat: "🧼 家事・身の回り", items: ["洗い物をお願いしたい", "洗濯物を取り込んでほしい", "ゴミ出しをお願い", "お風呂を沸かしてほしい"] },
+        { cat: "🍱 食事・買い出し", items: ["消化にいいものを作ってほしい", "コンビニでゼリー飲料買ってきて", "温かい飲み物を淹れてほしい", "アイス買ってきて"] },
+        { cat: "🌡️ 環境・ケア", items: ["部屋を暗くしてほしい", "静かにしてほしい", "湯たんぽ（カイロ）を用意してほしい", "腰や肩をさすってほしい"] },
+        { cat: "🕊️ 放置・見守り", items: ["放っておいてほしい（寝かせて）", "1〜2時間後に一度様子を見てほしい", "返信不要でスタンプだけ送って"] }
+      ],
+      notToDo: ["今は話しかけないでほしい", "大きな音を立てないで", "部屋を明るくしないで", "強い匂いのものは控えて", "そっとしておいて"]
     };
 
     const toggleSuggestion = (field, value) => {
       const currentText = config.levels[currentLevelTab][field] || "";
       let newText;
       if (currentText.includes(value)) {
-        newText = currentText.replace(value, "").replace(/、$/, "").replace(/^、/, "").replace(/、、/, "、");
+        newText = currentText.replace(value, "").replace(/、$/, "").replace(/^、/, "").replace(/、、/g, "、").trim();
+        if (newText.startsWith("、")) newText = newText.substring(1);
+        if (newText.endsWith("、")) newText = newText.slice(0, -1);
       } else {
         newText = currentText ? `${currentText}、${value}` : value;
       }
@@ -118,6 +125,7 @@ if (isSetting) {
         <div style={{ background: "white", padding: "20px", borderRadius: "25px", boxShadow: `0 10px 30px ${colors.shadow}` }}>
           <h4 style={{marginTop:0, color:colors.main, marginBottom:"20px"}}>レベル {currentLevelTab} の設定</h4>
           
+          {/* 症状イメージプルダウン */}
           <div style={{ marginBottom: "25px", padding: "15px", background: colors.bg, borderRadius: "18px", border: `1px solid ${colors.shadow}` }}>
             <label style={{ fontSize: "12px", fontWeight: "bold", display: "block", marginBottom: "8px", color: colors.main }}>🌡️ 症状をイメージする</label>
             <select style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid #ddd", fontSize: "14px", backgroundColor: "white" }}>
@@ -126,30 +134,36 @@ if (isSetting) {
             </select>
           </div>
 
+          {/* 各入力項目 */}
           {[
-            { label: "👟 いま、やっていること", field: "doing", icon: "👟" },
-            { label: "🍼 お願いしたいこと", field: "requests", icon: "🍼" },
-            { label: "🚫 遠慮してほしいこと", field: "notToDo", icon: "🚫" }
+            { label: "👟 いま、やっていること", field: "doing" },
+            { label: "🍼 お願いしたいこと", field: "requests" },
+            { label: "🚫 遠慮してほしいこと", field: "notToDo" }
           ].map((item) => (
-            <div key={item.field} style={{ marginBottom: "20px" }}>
+            <div key={item.field} style={{ marginBottom: "25px" }}>
               <label style={{fontSize:"13px", fontWeight:"bold", display:"block", marginBottom:"8px"}}>{item.label}</label>
               
-              {/* 選択肢チップス */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "8px" }}>
-                {suggestions[item.field].map(sug => (
-                  <button 
-                    key={sug}
-                    onClick={() => toggleSuggestion(item.field, sug)}
-                    style={{ 
-                      fontSize: "11px", padding: "5px 10px", borderRadius: "20px", border: "1px solid", 
-                      borderColor: config.levels[currentLevelTab][item.field]?.includes(sug) ? colors.main : "#ddd",
-                      background: config.levels[currentLevelTab][item.field]?.includes(sug) ? colors.main : "none",
-                      color: config.levels[currentLevelTab][item.field]?.includes(sug) ? "white" : colors.subText
-                    }}
-                  >
-                    {sug}
-                  </button>
-                ))}
+              <div style={{ background: colors.bg, padding: "10px", borderRadius: "15px", marginBottom: "10px" }}>
+                {item.field === "requests" ? (
+                  // お願いしたいこと（カテゴリー別表示）
+                  suggestions[item.field].map(catGroup => (
+                    <div key={catGroup.cat} style={{ marginBottom: "10px" }}>
+                      <div style={{ fontSize: "10px", color: colors.main, fontWeight: "bold", marginBottom: "5px" }}>{catGroup.cat}</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+                        {catGroup.items.map(sug => (
+                          <button key={sug} onClick={() => toggleSuggestion(item.field, sug)} style={{ fontSize: "11px", padding: "5px 10px", borderRadius: "20px", border: "1px solid", borderColor: config.levels[currentLevelTab][item.field]?.includes(sug) ? colors.main : "#ddd", background: config.levels[currentLevelTab][item.field]?.includes(sug) ? colors.main : "white", color: config.levels[currentLevelTab][item.field]?.includes(sug) ? "white" : colors.subText }}>{sug}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  // その他（通常のチップス表示）
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+                    {suggestions[item.field].map(sug => (
+                      <button key={sug} onClick={() => toggleSuggestion(item.field, sug)} style={{ fontSize: "11px", padding: "5px 10px", borderRadius: "20px", border: "1px solid", borderColor: config.levels[currentLevelTab][item.field]?.includes(sug) ? colors.main : "#ddd", background: config.levels[currentLevelTab][item.field]?.includes(sug) ? colors.main : "white", color: config.levels[currentLevelTab][item.field]?.includes(sug) ? "white" : colors.subText }}>{sug}</button>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <textarea 
