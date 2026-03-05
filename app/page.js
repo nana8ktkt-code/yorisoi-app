@@ -87,12 +87,28 @@ export default function Home() {
   };
 
 if (isSetting) {
+    const suggestions = {
+      doing: ["横になって休んでいるよ", "お薬飲んでいる", "暗い部屋で寝てる", "食欲はない"],
+      requests: ["温かい飲み物がほしい", "家事お願いしたい", "腰をさすってほしい", "濡れタオルを頭にのせてほしい"],
+      notToDo: ["今は話しかけないでほしい", "部屋を明るくしないで", "強い匂いのものは控えて", "そっとしておいて"]
+    };
+
+    const toggleSuggestion = (field, value) => {
+      const currentText = config.levels[currentLevelTab][field] || "";
+      let newText;
+      if (currentText.includes(value)) {
+        newText = currentText.replace(value, "").replace(/、$/, "").replace(/^、/, "").replace(/、、/, "、");
+      } else {
+        newText = currentText ? `${currentText}、${value}` : value;
+      }
+      setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], [field]: newText}}});
+    };
+
     return (
       <div style={{ padding: "20px", backgroundColor: colors.bg, minHeight: "100vh", color: colors.text }}>
         <button onClick={() => setIsSetting(false)} style={{marginBottom:"10px", border:"none", background:"none", fontSize:"16px"}}>◀ 戻る</button>
         <h2 style={{fontSize:"20px", marginBottom:"20px"}}>⚙️ レベル別の詳細設定</h2>
         
-        {/* レベル選択タブ */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "15px", overflowX: "auto", padding: "5px 0" }}>
           {[0, 1, 2, 3, 4, 5].map(l => (
             <button key={l} onClick={() => setCurrentLevelTab(l)} style={{ padding: "10px 15px", borderRadius: "12px", border: "none", background: currentLevelTab === l ? colors.main : "white", color: currentLevelTab === l ? "white" : colors.text, fontWeight:"bold", boxShadow: `0 4px 10px ${colors.shadow}` }}>Lv{l}</button>
@@ -100,41 +116,50 @@ if (isSetting) {
         </div>
 
         <div style={{ background: "white", padding: "20px", borderRadius: "25px", boxShadow: `0 10px 30px ${colors.shadow}` }}>
-          <h4 style={{marginTop:0, color:colors.main, marginBottom:"20px"}}>レベル {currentLevelTab} の設定をつくる</h4>
+          <h4 style={{marginTop:0, color:colors.main, marginBottom:"20px"}}>レベル {currentLevelTab} の設定</h4>
           
-          {/* ① 症状プルダウン（ポップアップなし） */}
           <div style={{ marginBottom: "25px", padding: "15px", background: colors.bg, borderRadius: "18px", border: `1px solid ${colors.shadow}` }}>
-            <label style={{ fontSize: "12px", fontWeight: "bold", display: "block", marginBottom: "8px", color: colors.main }}>
-              🌡️ どの症状のときの設定ですか？（確認）
-            </label>
-            <select 
-              style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid #ddd", fontSize: "14px", backgroundColor: "white" }}
-              onChange={(e) => {
-                // ポップアップを削除しました
-              }}
-            >
-              <option value="">症状を選んでイメージを膨らませる...</option>
+            <label style={{ fontSize: "12px", fontWeight: "bold", display: "block", marginBottom: "8px", color: colors.main }}>🌡️ 症状をイメージする</label>
+            <select style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid #ddd", fontSize: "14px", backgroundColor: "white" }}>
+              <option value="">症状を選んで確認...</option>
               {config.symptoms.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
-          <hr style={{ border: "none", borderTop: "1px dashed #eee", marginBottom: "20px" }} />
-
-          {/* ② 具体的なメッセージを書く */}
-          <div style={{ marginBottom: "15px" }}>
-            <label style={{fontSize:"13px", fontWeight:"bold", display:"block", marginBottom:"5px"}}>👟 いま、やっていること</label>
-            <textarea value={config.levels[currentLevelTab].doing} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], doing: e.target.value}}})} style={{width:"100%", height:"60px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"14px"}} placeholder="例：横になって休んでいるよ" />
-          </div>
-
-          <div style={{ marginBottom: "15px" }}>
-            <label style={{fontSize:"13px", fontWeight:"bold", display:"block", marginBottom:"5px"}}>🍼 お願いしたいこと</label>
-            <textarea value={config.levels[currentLevelTab].requests} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], requests: e.target.value}}})} style={{width:"100%", height:"60px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"14px"}} placeholder="例：温かい飲み物をいれてほしい" />
-          </div>
-
-          <div style={{ marginBottom: "10px" }}>
-            <label style={{fontSize:"13px", fontWeight:"bold", display:"block", marginBottom:"5px"}}>🚫 遠慮してほしいこと</label>
-            <textarea value={config.levels[currentLevelTab].notToDo} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], notToDo: e.target.value}}})} style={{width:"100%", height:"60px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"14px"}} placeholder="例：今は話しかけないでそっとしておいて" />
-          </div>
+          {[
+            { label: "👟 いま、やっていること", field: "doing", icon: "👟" },
+            { label: "🍼 お願いしたいこと", field: "requests", icon: "🍼" },
+            { label: "🚫 遠慮してほしいこと", field: "notToDo", icon: "🚫" }
+          ].map((item) => (
+            <div key={item.field} style={{ marginBottom: "20px" }}>
+              <label style={{fontSize:"13px", fontWeight:"bold", display:"block", marginBottom:"8px"}}>{item.label}</label>
+              
+              {/* 選択肢チップス */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "8px" }}>
+                {suggestions[item.field].map(sug => (
+                  <button 
+                    key={sug}
+                    onClick={() => toggleSuggestion(item.field, sug)}
+                    style={{ 
+                      fontSize: "11px", padding: "5px 10px", borderRadius: "20px", border: "1px solid", 
+                      borderColor: config.levels[currentLevelTab][item.field]?.includes(sug) ? colors.main : "#ddd",
+                      background: config.levels[currentLevelTab][item.field]?.includes(sug) ? colors.main : "none",
+                      color: config.levels[currentLevelTab][item.field]?.includes(sug) ? "white" : colors.subText
+                    }}
+                  >
+                    {sug}
+                  </button>
+                ))}
+              </div>
+              
+              <textarea 
+                value={config.levels[currentLevelTab][item.field]} 
+                onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], [item.field]: e.target.value}}})} 
+                style={{width:"100%", height:"50px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"13px"}} 
+                placeholder="または自由に記述..." 
+              />
+            </div>
+          ))}
         </div>
         
         <button onClick={saveSettings} style={{ width: "100%", padding: "18px", background: colors.main, color: "white", borderRadius: "20px", border: "none", fontWeight: "bold", marginTop: "25px", fontSize: "16px", boxShadow: `0 10px 20px ${colors.shadow}` }}>設定を保存する</button>
