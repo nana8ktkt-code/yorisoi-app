@@ -92,9 +92,25 @@ export default function Home() {
           ))}
         </div>
 
-        <div style={{ background: "white", padding: "20px", borderRadius: "25px", boxShadow: `0 10px 30px ${colors.shadow}` }}>
-          <h4 style={{marginTop:0, color:colors.main}}>レベル {currentLevelTab} のときの設定</h4>
+     <div style={{ background: "white", padding: "20px", borderRadius: "25px", boxShadow: `0 10px 30px ${colors.shadow}` }}>
+          <h4 style={{marginTop:0, color:colors.main, marginBottom:"15px"}}>レベル {currentLevelTab} のときの設定</h4>
           
+          {/* ★追加：症状のプルダウン。ここで選んだ症状に合わせて下の内容を書くイメージです */}
+          <div style={{ marginBottom: "20px", padding: "12px", background: colors.bg, borderRadius: "15px" }}>
+            <label style={{ fontSize: "12px", fontWeight: "bold", display: "block", marginBottom: "5px", color: colors.subText }}>
+              🌡️ このレベルで特に出やすい症状（確認）
+            </label>
+            <select 
+              style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1px solid #eee", fontSize: "14px" }}
+              onChange={(e) => {
+                if(e.target.value) alert(e.target.value + " の時の対策を下の欄に書いておきましょう！");
+              }}
+            >
+              <option value="">症状を選んでイメージする...</option>
+              {config.symptoms.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+
           <label style={{fontSize:"13px", fontWeight:"bold"}}>👟 いま、やっていること</label>
           <textarea value={config.levels[currentLevelTab].doing} onChange={e => setConfig({...config, levels: {...config.levels, [currentLevelTab]: {...config.levels[currentLevelTab], doing: e.target.value}}})} style={{width:"100%", height:"60px", marginBottom:"15px", borderRadius:"12px", padding:"10px", border:"1px solid #eee", fontSize:"14px"}} placeholder="例：横になって休んでいるよ" />
 
