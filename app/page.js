@@ -4,85 +4,55 @@ import { useState, useEffect } from "react";
 export default function Home() {
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [level, setLevel] = useState(0);
+  const [memo, setMemo] = useState("");
   const [isSettingMode, setIsSettingMode] = useState(false);
   const [editSymptom, setEditSymptom] = useState("");
-  const [periodDates, setPeriodDates] = useState([]); // 生理日の記録用
 
   const symptomsList = ["つわり", "生理痛", "PMS", "気持ちの浮き沈み", "頭痛", "喉が痛い", "腹痛", "熱がある", "体がだるい", "その他"];
 
+  // 初期の色設定（ブルー系）に戻しました
   const colors = {
-    bg: "#F9FDFF", main: "#8EC6E8", doing: "#EBF5FF", request: "#FFF0F0", ng: "#FFF5E6", text: "#4A4A4A", accent: "#FFB7B7"
+    bg: "#F9FDFF",    
+    main: "#8EC6E8",  
+    doing: "#EBF5FF", 
+    request: "#FFF0F0", 
+    ng: "#FFF5E6",     
+    text: "#4A4A4A"
+  };
+
+  // おすすめの選択肢リスト
+  const suggestions = {
+    doing: ["薬を飲んだ", "横になっている", "温めている", "水分を摂っている", "安静にしている"],
+    request: ["洗い物をお願い", "コンビニでゼリー買ってきて", "静かにしてほしい", "腰をさすって", "部屋を暗くして"],
+    ng: ["「大丈夫？」と何度も聞かないで", "アドバイスしないで", "大きな音を立てないで", "強い匂いのものを食べないで"]
   };
 
   const initialData = {};
   symptomsList.forEach(s => {
-    initialData[s] = { levels: [0, 1, 2, 3, 4, 5].map(() => ({ doing: [], request: [], ng: [] })), manual: "優しく見守ってね" };
+    initialData[s] = {
+      levels: [0, 1, 2, 3, 4, 5].map(() => ({ doing: [], request: [], ng: [] })),
+      manual: "優しく見守ってね"
+    };
   });
 
   const [presets, setPresets] = useState(initialData);
 
   useEffect(() => {
-    const saved = localStorage.getItem("yorisoi_v9_presets");
+    const saved = localStorage.getItem("yorisoi_v8_presets");
     if (saved) setPresets(JSON.parse(saved));
-    const savedDates = localStorage.getItem("yorisoi_period_dates");
-    if (savedDates) setPeriodDates(JSON.parse(savedDates));
   }, []);
 
   const saveToLocal = (newData) => {
     setPresets({ ...newData });
-    localStorage.setItem("yorisoi_v9_presets", JSON.stringify(newData));
+    localStorage.setItem("yorisoi_v8_presets", JSON.stringify(newData));
   };
 
-  const togglePeriodDate = (dateStr) => {
-    let newDates = [...periodDates];
-    if (newDates.includes(dateStr)) {
-      newDates = newDates.filter(d => d !== dateStr);
-    } else {
-      newDates.push(dateStr);
-    }
-    setPeriodDates(newDates);
-    localStorage.setItem("yorisoi_period_dates", JSON.stringify(newDates));
-  };
-
-  // --- カレンダー描画用 ---
-  const renderCalendar = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const days = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(i);
-
-    return (
-      <div style={{ background: "white", padding: "15px", borderRadius: "16px", marginTop: "20px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-        <h4 style={{ margin: "0 0 10px 0", fontSize: "14px", textAlign: "center" }}>{year}年 {month + 1}月</h4>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "5px", textAlign: "center", fontSize: "12px" }}>
-          {["日", "月", "火", "水", "木", "金", "土"].map(d => <div key={d} style={{ color: "#AAA" }}>{d}</div>)}
-          {days.map((d, i) => {
-            const dateStr = `${year}-${month + 1}-${d}`;
-            const isSelected = periodDates.includes(dateStr);
-            return (
-              <div key={i} onClick={() => d && togglePeriodDate(dateStr)} style={{
-                height: "35px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                borderRadius: "8px", background: isSelected ? colors.accent : "transparent", color: isSelected ? "white" : colors.text,
-                border: d ? "1px solid #F0F0F0" : "none"
-              }}>
-                {d}
-              </div>
-            );
-          })}
-        </div>
-        <p style={{ fontSize: "10px", color: "#888", marginTop: "10px", textAlign: "center" }}>日付をタップして生理日を記録（{colors.accent}色が記録日）</p>
-      </div>
-    );
-  };
-
-  // メッセージ送信・設定等のロジックは前回同様のため省略（実際には全コードが含まれます）
   const toggleSymptom = (s) => {
-    if (selectedSymptoms.includes(s)) { setSelectedSymptoms(selectedSymptoms.filter(item => item !== s)); }
-    else { setSelectedSymptoms([...selectedSymptoms, s]); }
+    if (selectedSymptoms.includes(s)) {
+      setSelectedSymptoms(selectedSymptoms.filter(item => item !== s));
+    } else {
+      setSelectedSymptoms([...selectedSymptoms, s]);
+    }
   };
 
   const addAction = (symptom, lvl, type, value = "") => {
@@ -108,9 +78,9 @@ export default function Home() {
         ngList.push(...current.ng.filter(t => t));
         manuals.push(`${s}: ${presets[s].manual}`);
       });
-      text = `【Yorisoi🕊️現状報告】\n症状：${selectedSymptoms.join("、")}\nしんどさ：Lv.${level}\n\n【やってること】\n${doingList.map(t => `・${t}`).join("\n") || "特になし"}\n\n【おねがい】\n${reqList.map(t => `・${t}`).join("\n") || "ゆっくりさせてね"}\n\n${ngList.length ? "⚠️NG：\n" + ngList.map(t => `・${t}`).join("\n") + "\n" : ""}\n【アドバイス】\n${manuals.join("\n")}`;
+      text = `【Yorisoi🕊️現状報告】\n症状：${selectedSymptoms.join("、")}\nしんどさ：Lv.${level}\n\n【今やってること】\n${doingList.map(t => `・${t}`).join("\n") || "特になし"}\n\n【おねがい】\n${reqList.map(t => `・${t}`).join("\n") || "ゆっくりさせてね"}\n\n${ngList.length ? "⚠️NG：\n" + ngList.map(t => `・${t}`).join("\n") + "\n" : ""}\n【アドバイス】\n${manuals.join("\n")}\n\nメモ：${memo}`;
     } else {
-      text = `【Yorisoi🕊️】\n体調が少し落ち着きました！サポートありがとう✨`;
+      text = `【Yorisoi🕊️】\n体調が少し落ち着きました！\nサポートありがとう✨`;
     }
     window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text)}`, "_blank");
   };
@@ -130,6 +100,7 @@ export default function Home() {
             <option value="">設定する症状を選択</option>
             {symptomsList.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
+
           {editSymptom && (
             <div>
               {[0, 1, 2, 3, 4, 5].map(lvl => (
@@ -137,11 +108,18 @@ export default function Home() {
                   <div style={{ fontWeight: "bold", color: colors.main, marginBottom: 10 }}>レベル {lvl}</div>
                   {["doing", "request", "ng"].map(type => (
                     <div key={type} style={{ marginTop: 15 }}>
-                      <div style={{ fontSize: "12px", color: "#888", marginBottom: 5 }}>{type === "doing" ? "やってること" : type === "request" ? "おねがい" : "NG"}</div>
+                      <div style={{ fontSize: "12px", color: "#888", marginBottom: 5 }}>{type === "doing" ? "やってること(青)" : type === "request" ? "おねがい(赤)" : "NG(黄)"}</div>
                       {presets[editSymptom].levels[lvl][type].map((item, idx) => (
-                        <input key={idx} value={item} onChange={(e) => updateAction(editSymptom, lvl, type, idx, e.target.value)} style={{ width: "100%", marginBottom: 6, padding: 10, borderRadius: 6, border: "1px solid #EEE", boxSizing: "border-box", backgroundColor: type === "doing" ? colors.doing : type === "request" ? colors.request : colors.ng }} />
+                        <input key={idx} value={item} onChange={(e) => updateAction(editSymptom, lvl, type, idx, e.target.value)} 
+                        style={{ width: "100%", marginBottom: 6, padding: 10, borderRadius: 6, border: "1px solid #EEE", boxSizing: "border-box", backgroundColor: type === "doing" ? colors.doing : type === "request" ? colors.request : colors.ng }} />
                       ))}
-                      <button onClick={() => addAction(editSymptom, lvl, type)} style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "20px", background: colors.main, color: "white", border: "none" }}>＋ 追加</button>
+                      {/* おすすめ選択肢チップス */}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "5px" }}>
+                        {suggestions[type].map(sug => (
+                          <button key={sug} onClick={() => addAction(editSymptom, lvl, type, sug)} style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "20px", border: "1px solid #DDD", background: "#fdfdfd" }}>+ {sug}</button>
+                        ))}
+                        <button onClick={() => addAction(editSymptom, lvl, type)} style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "20px", background: colors.main, color: "white", border: "none" }}>＋ 自由入力</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -166,19 +144,24 @@ export default function Home() {
           </section>
 
           {selectedSymptoms.length > 0 && (
-            <section style={{ marginBottom: 25 }}>
-              <h3 style={{ fontSize: "16px", marginBottom: 12 }}>2. しんどさレベル</h3>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 5 }}>
-                {[0, 1, 2, 3, 4, 5].map(n => (
-                  <button key={n} onClick={() => setLevel(n)} style={{ width: "15%", height: 50, borderRadius: 10, border: `2px solid ${colors.main}`, background: level === n ? colors.main : "white", color: level === n ? "white" : colors.main, fontWeight: "bold", fontSize: "18px" }}>{n}</button>
-                ))}
-              </div>
-              <button onClick={() => sendMessage("status")} style={{ width: "100%", padding: 18, background: colors.main, color: "white", borderRadius: 35, border: "none", fontSize: "18px", fontWeight: "bold", marginTop: 20, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}>LINEで伝える</button>
-            </section>
-          )}
+            <>
+              <section style={{ marginBottom: 25 }}>
+                <h3 style={{ fontSize: "16px", marginBottom: 12 }}>2. しんどさレベル</h3>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 5 }}>
+                  {[0, 1, 2, 3, 4, 5].map(n => (
+                    <button key={n} onClick={() => setLevel(n)} style={{ 
+                      width: "15%", height: 50, borderRadius: 10, border: `2px solid ${colors.main}`, 
+                      background: level === n ? colors.main : "white", 
+                      color: level === n ? "white" : colors.main, fontWeight: "bold" 
+                    }}>{n}</button>
+                  ))}
+                </div>
+              </section>
 
-          <h3 style={{ fontSize: "16px", marginBottom: 12 }}>3. 体調カレンダー</h3>
-          {renderCalendar()}
+              <button onClick={() => sendMessage("status")} style={{ width: "100%", padding: 18, background: colors.main, color: "white", borderRadius: 35, border: "none", fontSize: "18px", fontWeight: "bold", marginBottom: 12, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}>LINEで伝える</button>
+              <button onClick={() => sendMessage("thanks")} style={{ width: "100%", padding: 12, background: "white", color: colors.main, borderRadius: 35, border: `2px solid ${colors.main}`, fontSize: "15px", fontWeight: "bold" }}>ありがとうを送信</button>
+            </>
+          )}
         </div>
       )}
     </div>
