@@ -26,23 +26,23 @@ export default function YorisoiApp() {
   const [showThanks, setShowThanks] = useState("");
 
   // 設定画面用の編集ステート
-  const [editSymptom, setEditSymptom] = useState("生理痛"); // ★症状プルダウン用
-  const [editLevel, setEditLevel] = useState(0); // ★レベルタブ用
+  const [editSymptom, setEditSymptom] = useState("生理痛"); 
+  const [editLevel, setEditLevel] = useState(0); 
 
   const [config, setConfig] = useState({
     symptoms: ["生理痛", "頭痛", "だるい", "吐き気", "めまい", "腹痛"],
     data: {} 
   });
 
+  // チップの選択肢
   const suggestions = {
-    doing: ["横になって休んでいるよ", "薬を飲んで安静にしてる", "暗い部屋で寝てる", "食欲ないの", "少し落ち着いてきた"],
+    doing: ["横になって休んでる", "薬を飲んで安静にしてる", "暗い部屋で寝てる", "食欲がない", "少し落ち着いてきた"],
     requests: [
-      { cat: "🧼 家事", items: ["洗い物をお願い", "洗濯物を取り込んで", "ゴミ出しをお願い", "お風呂を沸かして"] },
-      { cat: "🍱 食事", items: ["ゼリー飲料買ってきて", "アイス買ってきて", "消化にいいもの", "温かい飲み物"] },
-      { cat: "🌡️ ケア", items: ["湯たんぽ用意して", "部屋を暗くして", "静かにしてほしい", "腰をさすって"] },
-      { cat: "🕊️ 放置", items: ["放っておいて（寝かせて）", "様子を見に来ないで", "返信不要でスタンプだけ"] }
+      { cat: "🧼 家事", items: ["洗い物をお願い", "洗濯物をお願い", "ゴミ出しをお願い"] },
+      { cat: "🍱 食事", items: ["ゼリー買ってきて", "消化にいいもの", "温かい飲み物"] },
+      { cat: "🌡️ ケア", items: ["湯たんぽ用意して", "部屋を暗くして", "腰をさすって"] }
     ],
-    notToDo: ["溜まった家事に触れないで", "今は話しかけないで", "大きな音NG", "匂いNG", "そっとしておいて"]
+    notToDo: ["家事に触れないで", "話しかけないで", "大きな音NG", "匂いNG", "そっとしておいて"]
   };
 
   const colors = { main: "#8E97FD", bg: "#F2F5FF", text: "#4A4A4A", card: "#FFFFFF", shadow: "rgba(142, 151, 253, 0.2)" };
@@ -77,6 +77,7 @@ export default function YorisoiApp() {
     }, { merge: true });
   };
 
+  // チップをクリックした時の動作
   const toggleSuggestion = (field, value) => {
     const symptomData = config.data[editSymptom] || {};
     const levelData = symptomData[editLevel] || { doing: "", requests: "", notToDo: "" };
@@ -94,6 +95,19 @@ export default function YorisoiApp() {
     saveToFirebase(level, activeSymptom, newConfigData);
   };
 
+  // 自由記述を入力した時の動作
+  const handleManualInput = (field, value) => {
+    const symptomData = config.data[editSymptom] || {};
+    const levelData = symptomData[editLevel] || { doing: "", requests: "", notToDo: "" };
+    
+    const newConfigData = {
+      ...config.data,
+      [editSymptom]: { ...symptomData, [editLevel]: { ...levelData, [field]: value } }
+    };
+    setConfig({...config, data: newConfigData});
+    saveToFirebase(level, activeSymptom, newConfigData);
+  };
+
   const sendThank = async (msg) => {
     if (!partnerId) return alert("連携相手がいません");
     await setDoc(doc(db, "users", partnerId), { lastThank: msg }, { merge: true });
@@ -102,85 +116,81 @@ export default function YorisoiApp() {
   if (isSetting) {
     return (
       <div style={{ padding: "20px", backgroundColor: colors.bg, minHeight: "100vh", fontFamily: "sans-serif" }}>
-        <button onClick={() => setIsSetting(false)} style={{border:"none", background:"white", padding:"8px 15px", borderRadius:"10px", marginBottom:"20px", fontWeight:"bold", boxShadow: "0 2px 5px rgba(0,0,0,0.1)"}}>◀ 戻る</button>
+        <button onClick={() => setIsSetting(false)} style={{border:"none", background:"white", padding:"8px 15px", borderRadius:"10px", marginBottom:"20px", fontWeight:"bold"}}>◀ 戻る</button>
         
-        <h2 style={{fontSize:"20px", marginBottom:"20px", color: colors.main, fontWeight:"800"}}>⚙️ 症状別・レベル別詳細設定</h2>
+        <h2 style={{fontSize:"18px", marginBottom:"15px", color: colors.main, fontWeight:"800"}}>⚙️ 症状×レベル別設定</h2>
 
-        {/* --- 1. 症状を選ぶプルダウン --- */}
-        <div style={{ marginBottom: "20px", padding: "15px", background: "white", borderRadius: "18px", boxShadow: `0 5px 15px ${colors.shadow}` }}>
-          <label style={{ fontSize: "13px", fontWeight: "bold", display: "block", marginBottom: "8px", color: colors.main }}>🌡️ 編集する症状を選んでね</label>
-          <select 
-            value={editSymptom} 
-            onChange={(e) => setEditSymptom(e.target.value)}
-            style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid #ddd", fontSize: "16px", backgroundColor: "#fff", appearance: "none", cursor: "pointer" }}
-          >
+        {/* 1. 症状プルダウン */}
+        <div style={{ marginBottom: "15px", padding: "12px", background: "white", borderRadius: "15px" }}>
+          <label style={{ fontSize: "12px", fontWeight: "bold", display: "block", marginBottom: "5px", color: colors.main }}>🌡️ 編集する症状</label>
+          <select value={editSymptom} onChange={(e) => setEditSymptom(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1px solid #ddd", fontSize: "14px" }}>
             {config.symptoms.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
 
-        {/* --- 2. レベルを選ぶタブ --- */}
-        <div style={{ display: "flex", gap: "8px", marginBottom: "20px", overflowX: "auto", paddingBottom: "5px" }}>
+        {/* 2. レベルタブ */}
+        <div style={{ display: "flex", gap: "5px", marginBottom: "20px", overflowX: "auto" }}>
           {[0, 1, 2, 3, 4, 5].map(l => (
-            <button key={l} onClick={() => setEditLevel(l)} style={{ padding: "10px 18px", borderRadius: "12px", border: "none", background: editLevel === l ? colors.main : "white", color: editLevel === l ? "white" : colors.text, fontWeight:"bold", boxShadow: `0 4px 10px ${colors.shadow}` }}>Lv{l}</button>
+            <button key={l} onClick={() => setEditLevel(l)} style={{ flex: 1, padding: "10px", borderRadius: "10px", border: "none", background: editLevel === l ? colors.main : "white", color: editLevel === l ? "white" : colors.text, fontWeight:"bold", fontSize:"12px" }}>Lv{l}</button>
           ))}
         </div>
 
-        {/* --- 3. お願い内容の選択（チップ） --- */}
-        <div style={{ background: "white", padding: "20px", borderRadius: "25px", boxShadow: `0 10px 30px ${colors.shadow}` }}>
-          <h4 style={{marginTop:0, color:colors.main, marginBottom:"20px"}}>【{editSymptom} × レベル {editLevel}】の設定</h4>
+        {/* 3. 各項目の編集エリア */}
+        <div style={{ background: "white", padding: "15px", borderRadius: "20px", boxShadow: `0 5px 15px ${colors.shadow}` }}>
+          <h4 style={{marginTop:0, color:colors.main, fontSize:"14px", borderBottom:`1px solid ${colors.bg}`, paddingBottom:"10px"}}>【{editSymptom} Lv.{editLevel}】の内容</h4>
           
-          {/* いまやっていること */}
-          <div style={{marginBottom:"20px"}}>
-            <label style={{fontSize:"13px", fontWeight:"bold", display:"block", marginBottom:"8px"}}>👟 いま、やっていること</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "10px" }}>
+          {/* --- いま、やっていること --- */}
+          <div style={{marginTop:"15px"}}>
+            <label style={{fontSize:"12px", fontWeight:"bold", color:colors.text}}>👟 いま、やっていること</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", margin: "8px 0" }}>
               {suggestions.doing.map(s => (
-                <button key={s} onClick={() => toggleSuggestion("doing", s)} style={{ fontSize: "11px", padding: "5px 12px", borderRadius: "20px", border: "1px solid", borderColor: config.data[editSymptom]?.[editLevel]?.doing?.includes(s) ? colors.main : "#ddd", background: config.data[editSymptom]?.[editLevel]?.doing?.includes(s) ? colors.main : "white", color: config.data[editSymptom]?.[editLevel]?.doing?.includes(s) ? "white" : colors.text }}>{s}</button>
+                <button key={s} onClick={() => toggleSuggestion("doing", s)} style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "15px", border: "1px solid", borderColor: config.data[editSymptom]?.[editLevel]?.doing?.includes(s) ? colors.main : "#eee", background: config.data[editSymptom]?.[editLevel]?.doing?.includes(s) ? colors.main : "white", color: config.data[editSymptom]?.[editLevel]?.doing?.includes(s) ? "white" : colors.text }}>{s}</button>
               ))}
             </div>
+            <textarea value={config.data[editSymptom]?.[editLevel]?.doing || ""} onChange={e => handleManualInput("doing", e.target.value)} style={{width:"100%", height:"40px", borderRadius:"8px", padding:"8px", border:"1px solid #eee", fontSize:"12px"}} placeholder="自由記述..." />
           </div>
 
-          {/* お願いしたいこと */}
-          <div style={{marginBottom:"20px"}}>
-            <label style={{fontSize:"13px", fontWeight:"bold", display:"block", marginBottom:"8px"}}>🍼 お願いしたいこと</label>
-            {suggestions.requests.map(cat => (
-              <div key={cat.cat} style={{ marginBottom: "10px" }}>
-                <div style={{ fontSize: "10px", color: colors.main, fontWeight: "bold", marginBottom: "5px" }}>{cat.cat}</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
-                  {cat.items.map(s => (
-                    <button key={s} onClick={() => toggleSuggestion("requests", s)} style={{ fontSize: "11px", padding: "5px 12px", borderRadius: "20px", border: "1px solid", borderColor: config.data[editSymptom]?.[editLevel]?.requests?.includes(s) ? colors.main : "#ddd", background: config.data[editSymptom]?.[editLevel]?.requests?.includes(s) ? colors.main : "white", color: config.data[editSymptom]?.[editLevel]?.requests?.includes(s) ? "white" : colors.text }}>{s}</button>
-                  ))}
+          {/* --- お願いしたいこと --- */}
+          <div style={{marginTop:"20px"}}>
+            <label style={{fontSize:"12px", fontWeight:"bold", color:colors.text}}>🍼 お願いしたいこと</label>
+            <div style={{ margin: "8px 0" }}>
+              {suggestions.requests.map(cat => (
+                <div key={cat.cat} style={{ marginBottom: "5px" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                    {cat.items.map(s => (
+                      <button key={s} onClick={() => toggleSuggestion("requests", s)} style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "15px", border: "1px solid", borderColor: config.data[editSymptom]?.[editLevel]?.requests?.includes(s) ? colors.main : "#eee", background: config.data[editSymptom]?.[editLevel]?.requests?.includes(s) ? colors.main : "white", color: config.data[editSymptom]?.[editLevel]?.requests?.includes(s) ? "white" : colors.text }}>{s}</button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <textarea value={config.data[editSymptom]?.[editLevel]?.requests || ""} onChange={e => handleManualInput("requests", e.target.value)} style={{width:"100%", height:"40px", borderRadius:"8px", padding:"8px", border:"1px solid #eee", fontSize:"12px"}} placeholder="自由記述..." />
           </div>
 
-          {/* 自由記述エリア */}
-          <label style={{fontSize:"13px", fontWeight:"bold", display:"block", marginBottom:"8px"}}>✍️ 自由記述（まとめて保存されます）</label>
-          <textarea 
-            value={config.data[editSymptom]?.[editLevel]?.requests || ""} 
-            onChange={e => {
-                const newD = {...config.data, [editSymptom]: {...config.data[editSymptom], [editLevel]: {...(config.data[editSymptom]?.[editLevel] || {}), requests: e.target.value}}};
-                setConfig({...config, data: newD});
-                saveToFirebase(level, activeSymptom, newD);
-            }} 
-            style={{width:"100%", height:"80px", borderRadius:"12px", padding:"12px", border:"1px solid #eee", fontSize:"14px", marginBottom:"15px"}} 
-            placeholder="例：ゼリー飲料買ってきて、腰をさすって..." 
-          />
+          {/* --- 遠慮してほしいこと --- */}
+          <div style={{marginTop:"20px"}}>
+            <label style={{fontSize:"12px", fontWeight:"bold", color:colors.text}}>🚫 遠慮してほしいこと</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", margin: "8px 0" }}>
+              {suggestions.notToDo.map(s => (
+                <button key={s} onClick={() => toggleSuggestion("notToDo", s)} style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "15px", border: "1px solid", borderColor: config.data[editSymptom]?.[editLevel]?.notToDo?.includes(s) ? colors.main : "#eee", background: config.data[editSymptom]?.[editLevel]?.notToDo?.includes(s) ? colors.main : "white", color: config.data[editSymptom]?.[editLevel]?.notToDo?.includes(s) ? "white" : colors.text }}>{s}</button>
+              ))}
+            </div>
+            <textarea value={config.data[editSymptom]?.[editLevel]?.notToDo || ""} onChange={e => handleManualInput("notToDo", e.target.value)} style={{width:"100%", height:"40px", borderRadius:"8px", padding:"8px", border:"1px solid #eee", fontSize:"12px"}} placeholder="自由記述..." />
+          </div>
         </div>
 
-        {/* 連携IDセクション */}
-        <div style={{ marginTop:"30px", background: "white", padding: "15px", borderRadius: "15px", boxShadow: `0 4px 10px ${colors.shadow}` }}>
-            <p style={{fontSize:"12px", marginBottom:"5px"}}>🔗 あなたの連携ID: <strong>{myId}</strong></p>
+        {/* 連携ID */}
+        <div style={{ marginTop:"20px", background: "white", padding: "15px", borderRadius: "15px", fontSize:"12px" }}>
+            <p style={{margin:"0 0 5px 0"}}>🔗 ID: {myId}</p>
             <div style={{display:"flex", gap:"5px"}}>
-                <input value={inputPartnerId} onChange={e => setInputPartnerId(e.target.value)} placeholder="相手のIDを入力" style={{flex:1, padding:"8px", borderRadius:"8px", border:"1px solid #ddd"}} />
-                <button onClick={() => setDoc(doc(db, "users", myId), { partnerId: inputPartnerId }, { merge: true })} style={{background:colors.main, color:"white", border:"none", borderRadius:"8px", padding:"0 15px", fontWeight:"bold"}}>連携</button>
+                <input value={inputPartnerId} onChange={e => setInputPartnerId(e.target.value)} placeholder="相手のID" style={{flex:1, padding:"8px", borderRadius:"8px", border:"1px solid #ddd"}} />
+                <button onClick={() => setDoc(doc(db, "users", myId), { partnerId: inputPartnerId }, { merge: true })} style={{background:colors.main, color:"white", border:"none", borderRadius:"8px", padding:"0 10px", fontWeight:"bold"}}>連携</button>
             </div>
         </div>
       </div>
     );
   }
 
-  // --- メイン画面 ---
   return (
     <div style={{ padding: "30px 20px", maxWidth: 450, margin: "0 auto", backgroundColor: colors.bg, minHeight: "100vh", fontFamily: "sans-serif" }}>
       {showThanks && (
@@ -188,39 +198,38 @@ export default function YorisoiApp() {
       )}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h1 style={{ fontSize: "24px", fontWeight: "900", color: colors.main, margin:0 }}>Yorisoi 🕊️</h1>
-        <button onClick={() => setIsSetting(true)} style={{ background: "white", border: "none", width:"45px", height:"45px", borderRadius:"50%", boxShadow: `0 5px 15px ${colors.shadow}`, fontSize:"20px" }}>⚙️</button>
+        <h1 style={{ fontSize: "22px", fontWeight: "900", color: colors.main, margin:0 }}>Yorisoi 🕊️</h1>
+        <button onClick={() => setIsSetting(true)} style={{ background: "white", border: "none", width:"40px", height:"40px", borderRadius:"50%", boxShadow: `0 5px 15px ${colors.shadow}`, fontSize:"18px" }}>⚙️</button>
       </div>
 
-      {/* 症状タブ */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "25px", overflowX: "auto", paddingBottom:"10px" }}>
+      <div style={{ display: "flex", gap: "8px", marginBottom: "25px", overflowX: "auto", paddingBottom:"5px" }}>
         {config.symptoms.map(s => (
-          <button key={s} onClick={() => { setActiveSymptom(s); saveToFirebase(level, s); }} style={{ padding: "12px 20px", borderRadius: "25px", border: "none", background: activeSymptom === s ? colors.main : "white", color: activeSymptom === s ? "white" : colors.text, fontWeight: "bold", whiteSpace:"nowrap", fontSize:"14px", boxShadow: activeSymptom === s ? `0 8px 15px ${colors.shadow}` : "0 2px 5px rgba(0,0,0,0.05)" }}>{s}</button>
+          <button key={s} onClick={() => { setActiveSymptom(s); saveToFirebase(level, s); }} style={{ padding: "10px 18px", borderRadius: "20px", border: "none", background: activeSymptom === s ? colors.main : "white", color: activeSymptom === s ? "white" : colors.text, fontWeight: "bold", whiteSpace:"nowrap", fontSize:"13px", boxShadow: activeSymptom === s ? `0 4px 10px ${colors.shadow}` : "none" }}>{s}</button>
         ))}
       </div>
 
-      <section style={{ background: "white", padding: "30px", borderRadius: "35px", boxShadow: `0 20px 40px ${colors.shadow}`, textAlign:"center" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "30px" }}>
+      <section style={{ background: "white", padding: "25px", borderRadius: "30px", boxShadow: `0 15px 35px ${colors.shadow}`, textAlign:"center" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "25px" }}>
           {[0, 1, 2, 3, 4, 5].map(n => (
-            <button key={n} onClick={() => { setLevel(n); saveToFirebase(n, activeSymptom); }} style={{ width: "45px", height: "45px", borderRadius: "50%", border: "none", background: level === n ? colors.main : colors.bg, color: level === n ? "white" : colors.main, fontWeight: "bold", fontSize:"16px" }}>{n}</button>
+            <button key={n} onClick={() => { setLevel(n); saveToFirebase(n, activeSymptom); }} style={{ width: "40px", height: "40px", borderRadius: "50%", border: "none", background: level === n ? colors.main : colors.bg, color: level === n ? "white" : colors.main, fontWeight: "bold" }}>{n}</button>
           ))}
         </div>
 
-        <div style={{ background: colors.bg, padding: "25px", borderRadius: "25px", marginBottom: "25px" }}>
+        <div style={{ background: colors.bg, padding: "20px", borderRadius: "20px", marginBottom: "25px" }}>
             <div style={{fontSize:"13px", color:colors.main, fontWeight:"bold", marginBottom:"5px"}}>{activeSymptom} Lv.{level}</div>
-            <div style={{ fontWeight: "900", fontSize:"22px" }}>
+            <div style={{ fontWeight: "900", fontSize:"20px" }}>
                 {level === 0 ? "元気だよ😊" : level === 5 ? "限界…たすけて😭" : "しんどい状態😰"}
             </div>
         </div>
 
-        <div style={{ textAlign: "left", fontSize: "15px", borderTop:`2px dashed ${colors.bg}`, paddingTop:"20px" }}>
-          <div style={{marginBottom:"15px"}}><strong>👟 やっていること:</strong> <br/>{config.data[activeSymptom]?.[level]?.doing || "（未設定）"}</div>
-          <div style={{marginBottom:"15px"}}><strong>🍼 お願い:</strong> <br/>{config.data[activeSymptom]?.[level]?.requests || "（未設定）"}</div>
-          <div style={{marginBottom:"25px"}}><strong>🚫 遠慮:</strong> <br/>{config.data[activeSymptom]?.[level]?.notToDo || "（未設定）"}</div>
+        <div style={{ textAlign: "left", fontSize: "14px", borderTop:`1px dashed ${colors.bg}`, paddingTop:"15px" }}>
+          <div style={{marginBottom:"12px"}}><strong>👟 やっていること:</strong> <br/>{config.data[activeSymptom]?.[level]?.doing || "（未設定）"}</div>
+          <div style={{marginBottom:"12px"}}><strong>🍼 お願い:</strong> <br/>{config.data[activeSymptom]?.[level]?.requests || "（未設定）"}</div>
+          <div style={{marginBottom:"20px"}}><strong>🚫 遠慮:</strong> <br/>{config.data[activeSymptom]?.[level]?.notToDo || "（未設定）"}</div>
           
-          <div style={{display:"flex", gap:"10px", justifyContent:"center"}}>
-            <button onClick={() => sendThank("助かったよ！")} style={{flex:1, padding:"12px", borderRadius:"15px", border:`2px solid ${colors.main}`, background:"none", color:colors.main, fontSize:"13px", fontWeight:"bold"}}>🌸 感謝</button>
-            <button onClick={() => sendThank("神対応！")} style={{flex:1, padding:"12px", borderRadius:"15px", border:`2px solid ${colors.main}`, background:"none", color:colors.main, fontSize:"13px", fontWeight:"bold"}}>✨ 神対応</button>
+          <div style={{display:"flex", gap:"8px", justifyContent:"center"}}>
+            <button onClick={() => sendThank("助かったよ！")} style={{flex:1, padding:"10px", borderRadius:"15px", border:`1px solid ${colors.main}`, background:"none", color:colors.main, fontSize:"12px", fontWeight:"bold"}}>🌸 感謝</button>
+            <button onClick={() => sendThank("神対応！")} style={{flex:1, padding:"10px", borderRadius:"15px", border:`1px solid ${colors.main}`, background:"none", color:colors.main, fontSize:"12px", fontWeight:"bold"}}>✨ 神対応</button>
           </div>
         </div>
       </section>
